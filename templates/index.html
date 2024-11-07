@@ -1,0 +1,18 @@
+Viestien määrä: {{ count }}
+<hr>
+{% for message in messages %}
+<i>nimike:</i> {{ message[0] }}
+<p>
+<i>Teksti:</i> {{ message[1] }}
+<p>
+<i>käyttäjä:</i> {{ message[2] }}
+<p>
+<i>lähetetty:</i> {{ message[3]}}
+<hr>
+{% endfor %}
+{% if session.user_id %}
+<p>Olet kirjautunut nimellä {{ session.username }}</p>
+<a href="/new">Lähetä viesti</a> | <a href="/logout">Kirjaudu ulos</a>
+{% else %}
+<a href="/login">kirjaudu</a>
+{% endif %}
