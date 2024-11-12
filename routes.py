@@ -52,8 +52,20 @@ def send():
     else:
         return render_template("error.html", message="Viestin lähetys ei onnistunut")
     
-#@app.route("/post/<int:id>")
-#def post(id):
-    #sql = text("""SELECT id FROM posts WHERE id = :id""")
-    #id = db.session.execute(sql, {"id":id}).fetchone()
-    #return render_template("post.html", post_id=id[0])
+@app.route("/post/<int:id>/comment")
+def comment(id):
+    return render_template("comment.html", id=id)
+
+@app.route("/post/<int:id>/sendcomment", methods=["POST"])
+def sendcomment(id):
+    content = request.form["content"]
+    if posts.comment(content, id):
+        return redirect(f"/post/{id}")
+    else:
+        return render_template("error.html", message="Ei onnisutnut")
+
+@app.route("/post/<int:id>")
+def post(id):
+    post = posts.get_post(id)
+    comments = posts.get_comments(id)
+    return render_template("post.html", post_id=id, post=post, comments=comments)

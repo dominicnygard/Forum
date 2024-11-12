@@ -8,6 +8,8 @@ Viestien määrä: {{ count }}
 <i>käyttäjä:</i> {{ message[2] }}
 <p>
 <i>lähetetty:</i> {{ message[3]}}
+<p>
+<a href="/post/{{ message[4] }}">Avaa viesti</a>
 <hr>
 {% endfor %}
 {% if session.user_id %}
