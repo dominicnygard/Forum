@@ -1,6 +1,8 @@
-<form action="/new" method="post">
-    Nimike: <br>
-    <textarea name="title" rows="3" cols="40"></textarea>
+{% for message in messages %}
+Chat: {{ message[3] }}
+<br>
+{% endfor %}
+<form action="/chat/{{ id }}" method="post">
     <br>
     <textarea name="content" rows="3" cols="40"></textarea>
     <br>

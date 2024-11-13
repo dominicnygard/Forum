@@ -1,20 +1,34 @@
-Viestien määrä: {{ count }}
-<hr>
-{% for message in messages %}
-<i>nimike:</i> {{ message[0] }}
-<p>
-<i>Teksti:</i> {{ message[1] }}
-<p>
-<i>käyttäjä:</i> {{ message[2] }}
-<p>
-<i>lähetetty:</i> {{ message[3]}}
-<p>
-<a href="/post/{{ message[4] }}">Avaa viesti</a>
-<hr>
-{% endfor %}
-{% if session.user_id %}
-<p>Olet kirjautunut nimellä {{ session.username }}</p>
-<a href="/new">Lähetä viesti</a> | <a href="/logout">Kirjaudu ulos</a>
-{% else %}
-<a href="/login">kirjaudu</a>
-{% endif %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='style/main.css') }}">
+<meta name="viewport" content="width=device.width, initial-scale=1">
+</head>
+{% extends "layout.html" %}
+{% block title %}Etusivu{% endblock %}
+{% block content %}
+<body>
+    Viestien määrä: {{ count }}
+    <hr>
+    {% for message in messages %}
+    <i>nimike:</i> {{ message[0] }}
+    <p>
+    <i>Teksti:</i> {{ message[1] }}
+    <p>
+    <i>käyttäjä:</i> {{ message[2] }}
+    <p>
+    <i>lähetetty:</i> {{ message[3]}}
+    <p>
+    <a href="/post/{{ message[4] }}">Avaa viesti</a>
+    <hr>
+    {% endfor %}
+    {% if session.user_id %}
+    <p>Olet kirjautunut nimellä {{ session.user_id }}</p>
+    <a href="/send">Lähetä viesti</a> | <a href="/logout">Kirjaudu ulos</a>
+    {% else %}
+    <a href="/login">kirjaudu</a>
+    {% endif %}
+</body>
+{% endblock %}
+</html>

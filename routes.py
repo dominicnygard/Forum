@@ -16,8 +16,7 @@ def login():
         password = request.form["password"]
         if users.login(username, password):
             return redirect("/")
-        else:
-            return redirect("/login")
+        return redirect("/login")
         
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -39,33 +38,43 @@ def logout():
     users.logout()
     return redirect("/")
 
-@app.route("/new")
-def new():
-    return render_template("new.html")
-
-@app.route("/send", methods=["POST"])
+@app.route("/new", methods=["GET", "POST"])
 def send():
-    title = request.form["title"]
-    content = request.form["content"]
-    if posts.send(title, content):
-        return redirect("/")
-    else:
-        return render_template("error.html", message="Viestin lähetys ei onnistunut")
+    if request.method == "GET":
+        return render_template("new.html")
+    if request.method == "POST":
+        title = request.form["title"]
+        content = request.form["content"]
+        if posts.send(title, content):
+            return redirect("/")
+        else:
+            return render_template("error.html", message="Viestin lähetys ei onnistunut")
     
-@app.route("/post/<int:id>/comment")
+@app.route("/post/<int:id>/comment", methods=["GET", "POST"])
 def comment(id):
-    return render_template("comment.html", id=id)
-
-@app.route("/post/<int:id>/sendcomment", methods=["POST"])
-def sendcomment(id):
-    content = request.form["content"]
-    if posts.comment(content, id):
-        return redirect(f"/post/{id}")
-    else:
-        return render_template("error.html", message="Ei onnisutnut")
+    if request.method == "GET":
+        return render_template("comment.html", id=id)
+    if request.method == "POST":
+        content = request.form["content"]
+        if posts.comment(content, id):
+            return redirect(f"/post/{id}")
+        else:
+            return render_template("error.html", message="Ei onnisutnut")
 
 @app.route("/post/<int:id>")
 def post(id):
     post = posts.get_post(id)
     comments = posts.get_comments(id)
     return render_template("post.html", post_id=id, post=post, comments=comments)
+
+@app.route("/chat/<int:id>", methods=["GET", "POST"])
+def chat(id):
+    if request.method == "GET":
+        messages = users.chat(id)
+        return render_template("chat.html", id=id, messages=messages)
+    if request.method == "POST":
+        content = request.form["content"]
+        if users.send_chat(id, content):
+            return redirect(f"/chat/{id}")
+        else:
+            return render_template("error.html", message="Ei toimi")

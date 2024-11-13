@@ -23,7 +23,7 @@ CREATE TABLE Comments
     sent_at     DATE
 )
 
-Create TABLE PrivateMessages
+Create TABLE Chats
 (
     id          SERIAL PRIMARY KEY,
     sender_id   INTEGER REFERENCES Users(id),

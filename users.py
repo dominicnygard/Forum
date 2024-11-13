@@ -1,7 +1,7 @@
-from db import db
 from flask import session
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.sql import text
+from db import db
 
 def login(username, password):
     sql =  text("SELECT id, password FROM users WHERE username = :username")
@@ -32,4 +32,17 @@ def logout():
 
 def user_id():
     return session.get("user_id", 0)
+
+def chat(receiver_id):
+    sender_id = user_id()
+    sql = text("SELECT * FROM CHATS WHERE sender_id = :sender_id AND receiver_id = :receiver_id OR receiver_id = :sender_id AND sender_id = :receiver_id;")
+    return db.session.execute(sql, {"sender_id": sender_id, "receiver_id": receiver_id}).fetchall()
+
+def send_chat(receiver_id, content):
+    sender_id = user_id()
+    sql = text("INSERT INTO chats (sender_id, receiver_id, content, sent_at) VALUES (:sender_id, :receiver_id, :content, NOW())")
+    db.session.execute(sql, {"sender_id": sender_id, "receiver_id": receiver_id, "content": content})
+    db.session.commit()
+    return True
+
 
