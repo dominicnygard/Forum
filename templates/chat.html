@@ -1,10 +1,54 @@
-{% for message in messages %}
-Chat: {{ message[3] }}
-<br>
-{% endfor %}
-<form action="/chat/{{ id }}" method="post">
-    <br>
-    <textarea name="content" rows="3" cols="40"></textarea>
-    <br>
-    <input type="submit" value="Lähetä">
-</form>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>chat</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+        <script type="text/javascript" charset="utf-8">
+            document.addEventListener("DOMContentLoaded", function() {
+                var socket = io({
+                    withCredentials: true
+                });
+
+                socket.emit('join', { room_id: "{{ id }}"});
+
+                socket.on('join_confirmation', function(data) {
+                    console.log(data.msg);
+                });
+
+                socket.on('receive_message', function(data) {
+                    var chatBox = document.getElementById("chat-box");
+                    var message = document.createElement("p");
+                    message.textContent = data.user_id + ": " + data.message;
+                    chatBox.appendChild(message);
+                });
+
+                document.getElementById("message-form").onsubmit = function(event) {
+                    event.preventDefault();
+                    var messageInput = document.getElementById("message-input");
+                    var messageText = messageInput.value;
+
+                    socket.emit('send-message', {
+                        room_id: "{{ id }}",
+                        message: messageText
+                    });
+
+                    messageInput.value = "";
+                };
+            });
+        </script>
+    </head>
+    <body>
+        <div id="chat-box" style="border: 1px solid #ccc; height: 300px; overflow-y: scroll;">
+            {% for message in messages %}
+            Chat: {{ message[4] }}
+            <br>
+            {% endfor %}
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message" autocomplete="off" required>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </body>
+
+</html>

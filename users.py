@@ -1,6 +1,7 @@
 from flask import session
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.sql import text
+import secrets
 from db import db
 
 def login(username, password):
@@ -18,9 +19,10 @@ def login(username, password):
         
 def register(username, password):
     hash_value = generate_password_hash(password)
+    hash_token = generate_password_hash(secrets.token_urlsafe())
     try:
-        sql = text("INSERT INTO users (username, password) VALUES (:username, :password)")
-        db.session.execute(sql, {"username": username, "password": hash_value})
+        sql = text("INSERT INTO users (username, password, token) VALUES (:username, :password, :token)")
+        db.session.execute(sql, {"username": username, "password": hash_value, "token": hash_token})
         db.session.commit()
     except Exception as e:
         print(e)
@@ -33,16 +35,7 @@ def logout():
 def user_id():
     return session.get("user_id", 0)
 
-def chat(receiver_id):
-    sender_id = user_id()
-    sql = text("SELECT * FROM CHATS WHERE sender_id = :sender_id AND receiver_id = :receiver_id OR receiver_id = :sender_id AND sender_id = :receiver_id;")
-    return db.session.execute(sql, {"sender_id": sender_id, "receiver_id": receiver_id}).fetchall()
-
-def send_chat(receiver_id, content):
-    sender_id = user_id()
-    sql = text("INSERT INTO chats (sender_id, receiver_id, content, sent_at) VALUES (:sender_id, :receiver_id, :content, NOW())")
-    db.session.execute(sql, {"sender_id": sender_id, "receiver_id": receiver_id, "content": content})
-    db.session.commit()
-    return True
-
-
+def get_other_user(id):
+    user_id = session.get("user_id", 0)
+    sql = text("SELECT user_id FROM UserPermissions WHERE room_id = :room_id AND user_id != :user_id")
+    return db.session.execute(sql, {"room_id": id, "user_id": user_id}).fetchone()
