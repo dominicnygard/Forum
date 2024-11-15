@@ -6,9 +6,13 @@ from flask_jwt_extended import JWTManager
 app = Flask(__name__)
 app.secret_key = getenv("SECRET_KEY")
 app.config['JWT_SECRET_KEY'] = getenv("JWT_SECRET_KEY")
+
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 86400
+
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_COOKIE_CSRF_PROTECT'] = True
+
 jwt = JWTManager(app)
 
 socketio = SocketIO(app, logger=True, engineio_logger=True)

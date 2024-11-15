@@ -1,19 +1,50 @@
-Post id: {{post_id}}
-<p>
-{{post}}
-<p>
-<hr>
-{% for comment in comments %}
-<i>käyttäjä:</i> {{ comment[0] }}
-<p>
-<i>lähetetty:</i> {{ comment[1] }}
-<p>
-<i>teksti:</i> {{ comment[2] }}
-<hr>
-{% endfor %}
-{% if session.user_id %}
-<p>Olet kirjautunut nimellä {{ session.username }}</p>
-<a href="{{post_id}}/comment">vastaa</a>
-{% else %}
-<a href="/login">kirjaudu</a>
-{% endif %}
+
+<html>
+    <head>
+        <script type="text/javascript" charset="utf-8">
+            document.addEventListener("DOMContentLoaded", function() {
+                document.getElementById("comment-form").onsubmit = function(event) {
+                    event.preventDefault();
+                    var commentContent = document.getElementById("comment-content");
+                    var commentContentText = commentContent.value;
+
+                    socket.emit('send-comment', {
+                        post_id: "{{post_id}}",
+                        content: commentContentText
+                    });
+
+                    commentContent.value = "";
+                };
+            });
+        </script>
+    </head>
+    {% extends "layout.html" %}
+    {% block title %}Etusivu{% endblock %}
+    {% block content %}
+    <body>
+        Post id: {{post_id}}
+        <p>
+        {{post}}
+        <p>
+        <hr>
+        <form id="comment-form">
+            <textarea type="text" id="comment-content"></textarea>
+            <button type="submit">Send</button>
+        </form>
+        {% for comment in comments %}
+        <i>käyttäjä:</i> {{ comment[0] }}
+        <p>
+        <i>lähetetty:</i> {{ comment[1] }}
+        <p>
+        <i>teksti:</i> {{ comment[2] }}
+        <hr>
+        {% endfor %}
+        {% if session.user_id %}
+        <p>Olet kirjautunut nimellä {{ session.username }}</p>
+        <a href="{{post_id}}/comment">vastaa</a>
+        {% else %}
+        <a href="/login">kirjaudu</a>
+        {% endif %}
+    </body>
+    {% endblock %}
+</html>

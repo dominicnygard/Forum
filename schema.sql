@@ -11,7 +11,7 @@ CREATE TABLE Posts
     user_id     INTEGER REFERENCES Users(id),
     title       TEXT,
     content     TEXT,
-    sent_at     DATE
+    sent_at     TIMESTAMP
 )
 
 CREATE TABLE Comments
@@ -20,17 +20,16 @@ CREATE TABLE Comments
     post_id     INTEGER REFERENCES Posts(id),
     user_id     INTEGER REFERENCES Users(id),
     content     TEXT,
-    sent_at     DATE
+    sent_at     TIMESTAMP
 )
 
-Create TABLE messages
+Create TABLE Messages
 (
     id              SERIAL PRIMARY KEY,
     chat_id         INTEGER REFERENCES chats(id),
     sender_id       INTEGER REFERENCES Users(id),
-    receiver_id     INTEGER REFERENCES Users(id),
     content         TEXT,
-    sent_at         DATE
+    sent_at         TIMESTAMP
 )
 
 CREATE TABLE chats
@@ -45,10 +44,17 @@ CREATE TABLE Permissions
     permission_name UNIQUE TEXT
 )
 
-CREATE TABLE UserPermissions
+CREATE TABLE ChatPermissions
 (
-    room_id INTEGER REFERENCES chats(id),
+    chat_id INTEGER REFERENCES chats(id),
     user_id INTEGER REFERENCES Users(id),
-    permission_id INTEGER REFERENCES Permisions(id),
+    permission_id INTEGER REFERENCES Permissions(id),
     PRIMARY KEY (room_id, user_id, permission_id)
+)
+
+CREATE TABLE PublicPermissions
+(
+    user_id INTEGER REFERENCES Users(id),
+    permission_id INTEGER REFERENCES Permissions(id),
+    PRIMARY KEY (user_id, permission_id)
 )

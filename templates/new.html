@@ -1,8 +1,39 @@
-<form action="/new" method="post">
-    Nimike: <br>
-    <textarea name="title" rows="3" cols="40"></textarea>
-    <br>
-    <textarea name="content" rows="3" cols="40"></textarea>
-    <br>
-    <input type="submit" value="Lähetä">
-</form>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='style/main.css') }}">
+        <meta name="viewport" content="width=device.width, initial-scale=1">
+        <script type="text/javascript" charset="utf-8">
+            document.addEventListener("DOMContentLoaded", function() {
+                document.getElementById("post-form").onsubmit = function(event) {
+                    event.preventDefault();
+                    var postTitle = document.getElementById("post-title");
+                    var postContent = document.getElementById("post-content");
+                    var postTitleText = postTitle.value;
+                    var postContentText = postContent.value;
+
+                    socket.emit('send-post', {
+                        title: postTitleText,
+                        content: postContentText
+                    });
+
+                    postTitle.value = "";
+                    postContent.value = "";
+                };
+            });
+        </script>
+    </head>
+    {% extends "layout.html" %}
+    {% block title %}Etusivu{% endblock %}
+    {% block content %}
+    <body>
+        <p>Hello</p>
+        <form id = "post-form">
+            <textarea type="text" id="post-title"></textarea>
+            <textarea type="text" id="post-content"></textarea>
+            <button type="submit">Send</button>
+        </form>
+    </body>
+    {% endblock %}
+</html>

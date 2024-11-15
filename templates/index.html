@@ -12,20 +12,20 @@
     Viestien määrä: {{ count }}
     <hr>
     {% for message in messages %}
-    <i>nimike:</i> {{ message[0] }}
-    <p>
-    <i>Teksti:</i> {{ message[1] }}
-    <p>
-    <i>käyttäjä:</i> {{ message[2] }}
-    <p>
-    <i>lähetetty:</i> {{ message[3]}}
-    <p>
-    <a href="/post/{{ message[4] }}">Avaa viesti</a>
-    <hr>
+    <div class="post">
+        <div class="postinfo">
+            <p>{{ message[2] }}</p>
+            <p>{{ message[3] }}</p>
+        </div>
+        <div class="post-content">
+            <h1>{{ message[0] }}</h1> 
+            <p>{{ message[1] }}</p>
+        </div>
+    </div>
     {% endfor %}
     {% if session.user_id %}
     <p>Olet kirjautunut nimellä {{ session.user_id }}</p>
-    <a href="/send">Lähetä viesti</a> | <a href="/logout">Kirjaudu ulos</a>
+    <a href="/new">Lähetä viesti</a> | <a href="/logout">Kirjaudu ulos</a>
     {% else %}
     <a href="/login">kirjaudu</a>
     {% endif %}

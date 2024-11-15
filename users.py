@@ -1,7 +1,7 @@
 from flask import session
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.sql import text
-import secrets
+from flask_jwt_extended import verify_jwt_in_request, get_jwt
 from db import db
 
 def login(username, password):
@@ -19,10 +19,14 @@ def login(username, password):
         
 def register(username, password):
     hash_value = generate_password_hash(password)
-    hash_token = generate_password_hash(secrets.token_urlsafe())
     try:
-        sql = text("INSERT INTO users (username, password, token) VALUES (:username, :password, :token)")
-        db.session.execute(sql, {"username": username, "password": hash_value, "token": hash_token})
+        sql = text("INSERT INTO users (username, password) VALUES (:username, :password)")
+        db.session.execute(sql, {"username": username, "password": hash_value})
+        db.session.commit()
+        sql = text('SELECT id FROM users WHERE username = :username')
+        user_id = db.session.execute(sql, {"username": username}).fetchone()
+        sql = text("INSERT INTO PublicPermissions (user_id, permission_id) VALUES (:user_id, 4), (:user_id, 5)")
+        db.session.execute(sql, {"user_id": user_id[0]})
         db.session.commit()
     except Exception as e:
         print(e)
@@ -35,7 +39,3 @@ def logout():
 def user_id():
     return session.get("user_id", 0)
 
-def get_other_user(id):
-    user_id = session.get("user_id", 0)
-    sql = text("SELECT user_id FROM UserPermissions WHERE room_id = :room_id AND user_id != :user_id")
-    return db.session.execute(sql, {"room_id": id, "user_id": user_id}).fetchone()
