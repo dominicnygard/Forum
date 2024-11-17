@@ -25,7 +25,7 @@ def register(username, password):
         db.session.commit()
         sql = text('SELECT id FROM users WHERE username = :username')
         user_id = db.session.execute(sql, {"username": username}).fetchone()
-        sql = text("INSERT INTO PublicPermissions (user_id, permission_id) VALUES (:user_id, 4), (:user_id, 5)")
+        sql = text("INSERT INTO PublicPermissions (user_id, permission_id) VALUES (:user_id, 3), (:user_id, 4)")
         db.session.execute(sql, {"user_id": user_id[0]})
         db.session.commit()
     except Exception as e:

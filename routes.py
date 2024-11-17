@@ -59,7 +59,7 @@ def logout():
     users.logout()
     resp = jsonify({'logout': True})
     unset_jwt_cookies(resp)
-    return resp, 200
+    return redirect("/")
 
 @app.route("/new")
 @jwt_required()
