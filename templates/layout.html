@@ -1,24 +1,30 @@
 <!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forum - {% block title %}{% endblock %}</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
-</head>
-<body>
-    <div class="container">
-        <div class="navbar">
-            <a href="/" class="left">Forum</a>
-            <a href="/register">Rekisteröi</a>
-            <a href="/login">Kirjaudu</a>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Forum - {% block title %}{% endblock %}</title>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='style/main.css') }}">
+    </head>
+    <body>
+        <div class="container">
+            <div class="navbar">
+                <a href="/" class="left">Forum</a>
+                <a href="/register">Rekisteröi</a>
+                <a href="/login">Kirjaudu</a>
+            </div>
+            <div class="sidebar">
+                <div id="chat-list">
+                    
+                </div>
+            </div>
+            <div class="content">
+                {% block content %}{% endblock %}
+            </div>
         </div>
-        <div class="sidebar">
-            <a href="/threads">Keskustelut</a>
-        </div>
-        <div class="content">
-            {% block content %}{% endblock %}
-        </div>
-    </div>
-    <script src="{{url_for('static', filename='js/socket.js')}}"></script>
-</body>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+        <script src="{{url_for('static', filename='js/socket.js')}}"></script>
+        {% block scripts %}{% endblock %}
+    </body>
+</html>

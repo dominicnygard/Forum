@@ -5,7 +5,7 @@ body {
 .container {  
     display: grid;
     grid-template-columns: 0.4fr 1.6fr 1fr;
-    grid-template-rows: 0.2fr 1.8fr 1fr;
+    grid-template-rows: 0.15fr 1.85fr 1fr;
     gap: 0px 0px;
     grid-auto-flow: row;
     grid-template-areas:
@@ -13,7 +13,7 @@ body {
         "sidebar content content"
         "sidebar content content";
 }
-  
+
 .navbar { 
     grid-area: navbar;
     background-color: #a6eeaa;
@@ -81,4 +81,10 @@ body {
     overflow-wrap: break-word;
     white-space: normal;
     overflow: hidden;
+}
+
+.chat-item {
+    background-color: lightgray;
+    margin: 10px;
+    padding: 10px;
 }

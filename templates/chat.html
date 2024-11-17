@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 <html>
+    {% extends "layout.html" %}
     <head>
         <title>chat</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
-        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+    </head>
+    {% block content %}
+    <body>
+        <div id="chat-box" style="border: 1px solid #ccc; height: 300px; overflow-y: scroll;">
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message" autocomplete="off" required>
+                <button type="submit">Send</button>
+            </form>
+            {% for message in messages %}
+            Chat: {{ message[3] }}
+            <br>
+            {% endfor %}
+        </div>
+        {% endblock %}
+        {% block scripts %}
         <script type="text/javascript" charset="utf-8">
             document.addEventListener("DOMContentLoaded", function() {
+                //const socket = getSocket();
 
                 socket.emit('join', { room_id: "{{ id }}"});
 
@@ -34,18 +49,6 @@
                 };
             });
         </script>
-    </head>
-    <body>
-        <div id="chat-box" style="border: 1px solid #ccc; height: 300px; overflow-y: scroll;">
-            <form id="message-form">
-                <input type="text" id="message-input" placeholder="Type a message" autocomplete="off" required>
-                <button type="submit">Send</button>
-            </form>
-            {% for message in messages %}
-            Chat: {{ message[3] }}
-            <br>
-            {% endfor %}
-        </div>
+        {% endblock %}
     </body>
-
 </html>

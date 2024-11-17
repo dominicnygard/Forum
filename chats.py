@@ -70,3 +70,74 @@ def create_room(id):
 def get_room_id(id):
     sql = text("SELECT room_id FROM chats WHERE id = :id")
     return db.session.execute(sql, {"id": id}).fetchone()
+
+def get_user_rooms_layout(id):
+    user_chats = {}
+    sql = text("SELECT DISTINCT cp2.room_id, u.id, u.username \
+        FROM UserPermissions cp1 \
+        JOIN UserPermissions cp2 ON cp1.room_id = cp2.room_id  \
+        JOIN Users u ON cp2.user_id = u.id \
+        WHERE cp1.user_id = :user_id  \
+        AND cp2.user_id != :user_id;")
+    chats = db.session.execute(sql, {"user_id": id}).fetchall()
+
+    for chat in chats:
+        if chat[0] not in user_chats:
+            user_chats[chat[0]] = []
+        user_chats[chat[0]].append((chat[1], chat[2]))
+    return user_chats
+
+
+def get_every_user_room():
+    all_rooms = {}
+    sql = text("""WITH LastActive AS (
+    SELECT 
+        chat_id,
+        MAX(sent_at) as last_active
+    FROM Messages
+    GROUP BY chat_id
+    )
+    SELECT 
+        u1.id as user1_id,
+        u1.username as user1_name,
+        array_agg(json_build_object(
+            'user_id', u2.id,
+            'username', u2.username,
+            'chat_id', c.id,
+            'last_active', la.last_active
+        )) as chats
+    FROM chats c
+    JOIN chatParticipants cp1 ON c.id = cp1.chat_id
+    JOIN chatParticipants cp2 ON c.id = cp2.chat_id
+    JOIN Users u1 ON cp1.user_id = u1.id
+    JOIN Users u2 ON cp2.user_id = u2.id
+    LEFT JOIN LastActive la ON c.id = la.chat_id
+    WHERE cp1.user_id != cp2.user_id
+    GROUP BY u1.id, u1.username
+    ORDER BY u1.id;""")
+    rooms = db.session.execute(sql).fetchall()
+    print(rooms)
+
+    for room in rooms:
+        all_rooms.update({room[0]: room[1]})
+    
+    return all_rooms
+
+sql = text("""SELECT 
+    u1.id, 
+    u1.username,
+    u2.id,
+    u2.username,
+    c.id,
+    MAX(m.sent_at)
+    FROM chats c
+    JOIN chatParticipants cp1 ON c.id = cp1.chat_id
+    JOIN chatParticipants cp2 ON c.id = cp2.chat_id
+    JOIN Users u1 ON cp1.user_id = u1.id
+    JOIN Users u2 ON cp2.user_id = u2.id
+    LEFT JOIN Messages m ON c.id = m.chat_id
+    WHERE cp1.user_id != cp2.user_id
+    GROUP BY c.id, u1.id, u1.username, u2.id, u2.username
+    ORDER BY c.id, u1.id;
+    """)
+

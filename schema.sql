@@ -38,10 +38,16 @@ CREATE TABLE chats
     room_id         TEXT UNIQUE
 )
 
+CREATE TABLE chatParticipants (
+    chat_id         INTEGER REFERENCES chats(id),
+    user_id         INTEGER REFERENCES users(id),
+    PRIMARY KEY (chat_id, user_id)
+)
+
 CREATE TABLE Permissions
 (
     id              SERIAL PRIMARY KEY,
-    permission_name UNIQUE TEXT
+    permission_name TEXT UNIQUE
 )
 
 CREATE TABLE ChatPermissions

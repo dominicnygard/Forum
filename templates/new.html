@@ -1,9 +1,25 @@
 <!DOCTYPE html>
 <html>
+    {% extends "layout.html" %}
+    {% block content %}
     <head>
-        <meta charset="UTF-8">
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='style/main.css') }}">
-        <meta name="viewport" content="width=device.width, initial-scale=1">
+        {% block title %}new{% endblock %}
+    </head>
+    <body>
+        <div>
+            <h2>Create New Post</h2>
+            <form id="post-form">
+                <div>
+                    <label for="title">Title:</label>
+                    <input type="text" id="post-title" name="title" required>
+                </div>
+                <div>
+                    <label for="content">Content:</label>
+                    <textarea id="post-content" name="content" required></textarea>
+                </div>
+                <button type="submit">Send</button>
+            </form>
+        </div>
         <script type="text/javascript" charset="utf-8">
             document.addEventListener("DOMContentLoaded", function() {
                 document.getElementById("post-form").onsubmit = function(event) {
@@ -23,17 +39,6 @@
                 };
             });
         </script>
-    </head>
-    {% extends "layout.html" %}
-    {% block title %}Etusivu{% endblock %}
-    {% block content %}
-    <body>
-        <p>Hello</p>
-        <form id = "post-form">
-            <textarea type="text" id="post-title"></textarea>
-            <textarea type="text" id="post-content"></textarea>
-            <button type="submit">Send</button>
-        </form>
     </body>
     {% endblock %}
 </html>
