@@ -2,8 +2,8 @@ from app import socketio
 from flask_socketio import join_room, emit, disconnect
 from flask import abort, request
 from functools import wraps
-from flask_jwt_extended import create_access_token, set_access_cookies, jwt_required, get_jwt, verify_jwt_in_request
-import users, chats, posts
+from flask_jwt_extended import jwt_required, get_jwt, verify_jwt_in_request
+import users, chats, posts, rooms
 
 @socketio.on('connect')
 def handle_connect():
@@ -36,12 +36,17 @@ def handle_send_message(data):
     room_id = data['room_id']
     message = data['message']
 
-    chats.send_chat(room_id, message)
+    sent_at = chats.send_chat(room_id, message)
+    other_user_id = rooms.get_other_user(users.user_id(), room_id)
+
+    rooms.update_room(users.user_id(), other_user_id, room_id, sent_at.isoformat())
 
     emit('receive_message', {
         'user_id': users.user_id(),
-        'message': message
+        'message': message,
     }, room=room_id)
+
+    emit('update-rooms', room=room_id)
 
 @socketio.on('send-post')
 @jwt_required()
@@ -92,6 +97,7 @@ def room_permission_required(permission_name):
 
 
             room_id = kwargs.get('room_id')
+            print(room_id)
 
             if not has_room_permissions(room_id, permission_name, jwt_data):
                 abort(403, description=f"Missing required permission: {permission_name}")

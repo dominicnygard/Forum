@@ -20,7 +20,6 @@
         {% block scripts %}
         <script type="text/javascript" charset="utf-8">
             document.addEventListener("DOMContentLoaded", function() {
-                //const socket = getSocket();
 
                 socket.emit('join', { room_id: "{{ id }}"});
 

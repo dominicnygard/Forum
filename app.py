@@ -2,12 +2,9 @@ from os import getenv
 from flask import Flask
 from flask_socketio import SocketIO
 from flask_jwt_extended import JWTManager
-from flask_cors import CORS
 from datetime import timedelta
 
 app = Flask(__name__)
-
-user_rooms = {}
 
 app.secret_key = getenv("SECRET_KEY")
 app.config['JWT_SECRET_KEY'] = getenv("JWT_SECRET_KEY")
@@ -25,9 +22,8 @@ jwt = JWTManager(app)
 
 socketio = SocketIO(app, logger=True, engineio_logger=True)
 
-CORS(app, supports_credentials=True)
 
 import routes
 
-if __name__ == "__main__":
-    socketio.run(app)
+#if __name__ == "__main__":
+    #socketio.run(app)
