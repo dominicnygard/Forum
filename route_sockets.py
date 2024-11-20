@@ -1,4 +1,4 @@
-from app import socketio
+from app import socketio, app
 from flask_socketio import join_room, emit, disconnect
 from flask import abort, request
 from functools import wraps
@@ -16,63 +16,82 @@ def handle_connect():
         rooms = user_permissions.keys()
         for room in rooms:
             join_room(room)
+        user_id = users.user_id()
+        join_room(f"user_{user_id}")
         emit('connected', {'message': 'Connected'})
     except Exception as e:
-        print(f"Authentication failed: {e}")
+        app.logger.error(f"Connecting to server failed: {e}")
+        emit('error', {'message': 'An error occurred while connecting to the server'}, to=request.sid)
     
 
 @socketio.on('join')
 @jwt_required()
 def join(data):
-    user_id = users.user_id()
-    room = data['room_id']
-    join_room(room)
+    try:
+        user_id = users.user_id()
+        room = data['room_id']
+        join_room(room)
 
-    emit('join_confirmation', {'msg': f"{user_id} has enterend room {room}"}, room=room)
+        emit('join_confirmation', {'msg': f"{user_id} has entered room {room}"}, room=room)
+    except Exception as e:
+        app.logger.error(f"Error joining room {room}: {e}")
+        emit('error', {'message': 'An error occurred while joining a room'}, to=request.sid)
 
 @socketio.on('send-message')
 @jwt_required()
 def handle_send_message(data):
-    room_id = data['room_id']
-    message = data['message']
+    try:
+        room_id = data['room_id']
+        message = data['message']
 
-    sent_at = chats.send_chat(room_id, message)
-    other_user_id = rooms.get_other_user(users.user_id(), room_id)
+        sent_at = chats.send_chat(room_id, message)
+        other_user_id = rooms.get_other_user(users.user_id(), room_id)
 
-    rooms.update_room(users.user_id(), other_user_id, room_id, sent_at.isoformat())
+        rooms.update_room(users.user_id(), other_user_id, room_id, sent_at.isoformat())
 
-    emit('receive_message', {
-        'user_id': users.user_id(),
-        'message': message,
-    }, room=room_id)
+        emit('receive_message', {
+            'user_id': users.user_id(),
+            'message': message,
+        }, room=room_id)
 
-    emit('update-rooms', room=room_id)
+        emit('update-rooms', room=room_id)
+    except Exception as e:
+        app.logger.error(f"Error sending message: {e}")
+        emit('error', {'message': 'An error occurred while sending the message'}, to=request.sid)
 
 @socketio.on('send-post')
 @jwt_required()
 def handle_send_post(data):
-    title = data['title']
-    content = data['content']
-    token = get_jwt()
+    try:
+        title = data['title']
+        content = data['content']
+        token = get_jwt()
 
-    if has_room_permissions(permission_name='post', token=token):
-        posts.send(title, content)
-        emit('redirect', {'url': "/"}, to=request.sid)
-    else:
-        emit('post_denied', {'msg': "Access denied"})
+        if has_room_permissions(permission_name='post', token=token):
+            posts.send(title, content)
+            emit('redirect', {'url': "/"}, to=request.sid)
+        else:
+            emit('post_denied', {'msg': "Access denied"})
+    except Exception as e:
+        app.logger.error(f"Error sending post: {e}")
+        emit('error', {'message': 'An error occurred while sending the post'}, to=request.sid)
 
 @socketio.on('send-comment')
 @jwt_required()
 def handle_send_post(data):
-    content = data['content']
-    id = data['post_id']
-    token = get_jwt()
+    try:
+        content = data['content']
+        id = data['post_id']
+        token = get_jwt()
 
-    if has_room_permissions(permission_name='comment', token=token):
-        posts.comment(content, id)
-        emit('success', {'url': "/"})
-    else:
-        emit('post_denied', {'msg': "Access denied"})
+        if has_room_permissions(permission_name='comment', token=token):
+            posts.comment(content, id)
+            emit('success', {'url': "/"})
+        else:
+            emit('post_denied', {'msg': "Access denied"})
+    except Exception as e:
+        app.logger.error(f"Error sending comment: {e}")
+        emit('error', {'message': 'An error occurred while sending the comment'}, to=request.sid)
 
 
 

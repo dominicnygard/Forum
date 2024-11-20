@@ -1,1 +1,13 @@
-Virhe: {{ message }}
+<!DOCTYPE html>
+<html>
+    {% extends "layout.html" %}
+    <head>
+        <title>error</title>
+    </head>
+    {% block content %}
+    <body>
+        <h1>Error</h1>
+        <p>{{ message }}</p>
+    </body>
+    {% endblock %}
+</html>
