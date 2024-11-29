@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     
     socket.on('connect', function() {
+        fetchChats();
         console.log('Connected to server');
     });
     
@@ -118,8 +119,4 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     
     window.socket = socket;
-    
-    fetchChats();
-
-
 });

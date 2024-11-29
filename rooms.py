@@ -1,6 +1,6 @@
-from sqlalchemy.sql import text
 from threading import Lock
 import uuid
+from sqlalchemy.sql import text
 from db import db
 from app import app
 
@@ -41,7 +41,6 @@ def get_user_rooms(id):
     except Exception as e:
         app.logger.error(f"Error fetching user rooms from database/memory: {e}")
         return []
-
 
 def sort_rooms(rooms):
     return sorted(

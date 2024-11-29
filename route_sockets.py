@@ -11,6 +11,7 @@ def handle_connect():
         verify_jwt_in_request()
         token = get_jwt()
         if not token:
+            emit('error', {'message': 'Authentication required'}, to=request.sid)
             return disconnect()
         user_permissions = token.get('user_permissions')
         rooms = user_permissions.keys()
@@ -22,7 +23,7 @@ def handle_connect():
     except Exception as e:
         app.logger.error(f"Connecting to server failed: {e}")
         emit('error', {'message': 'An error occurred while connecting to the server'}, to=request.sid)
-    
+        disconnect()
 
 @socketio.on('join')
 @jwt_required()
@@ -32,7 +33,7 @@ def join(data):
         room = data['room_id']
         join_room(room)
 
-        emit('join_confirmation', {'msg': f"{user_id} has entered room {room}"}, room=room)
+        emit('join-confirmation', {'msg': f"{user_id} has entered room {room}"}, room=room)
     except Exception as e:
         app.logger.error(f"Error joining room {room}: {e}")
         emit('error', {'message': 'An error occurred while joining a room'}, to=request.sid)
@@ -41,6 +42,7 @@ def join(data):
 @jwt_required()
 def handle_send_message(data):
     try:
+        verify_jwt_in_request()
         room_id = data['room_id']
         message = data['message']
 
@@ -49,8 +51,10 @@ def handle_send_message(data):
 
         rooms.update_room(users.user_id(), other_user_id, room_id, sent_at.isoformat())
 
-        emit('receive_message', {
-            'user_id': users.user_id(),
+        token = get_jwt()
+        username = token.get('username')
+        emit('receive-message', {
+            'username': username,
             'message': message,
         }, room=room_id)
 

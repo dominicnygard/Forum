@@ -22,12 +22,6 @@
         </div>
     </div>
     {% endfor %}
-    {% if session.user_id %}
-    <p>Olet kirjautunut nimellä {{ session.user_id }}</p>
-    <a href="/new">Lähetä viesti</a> | <a href="/logout">Kirjaudu ulos</a>
-    {% else %}
-    <a href="/login">kirjaudu</a>
-    {% endif %}
 </body>
 {% endblock %}
 </html>

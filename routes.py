@@ -1,6 +1,6 @@
 from app import app, socketio
-from flask import render_template, request, redirect, make_response, jsonify, url_for
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask import render_template, request, redirect, jsonify, url_for
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
 from route_sockets import room_permission_required
 import posts, users, chats, rooms
 from datetime import datetime, timedelta
@@ -125,6 +125,8 @@ def start_chat(user_id):
         
         if user_id in users.active_users:
             socketio.emit('refresh-token', room=f"user_{user_id}")
+            socketio.emit('update-rooms')
+
 
         response.headers['location'] = url_for('chat', room_id=room_id)
         response.status_code = 302
@@ -169,5 +171,13 @@ def refresh_expiring_jwts(response):
     except (RuntimeError, KeyError):
         return response
 
-
+@app.context_processor
+def inject_user():
+    verify_jwt_in_request(optional=True)
+    user_id = get_jwt_identity()
+    if user_id:
+        token = get_jwt()
+        username = token.get("username")
+        return {'current_user': {'id': user_id, 'username': username}}
+    return {'current_user': None}
 

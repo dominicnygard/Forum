@@ -37,7 +37,7 @@ def register(username, password):
         db.session.commit()
         user_id = result.fetchone()[0]
         sql = text("INSERT INTO PublicPermissions (user_id, permission_id) VALUES (:user_id, 3), (:user_id, 4)")
-        db.session.execute(sql, {"user_id": user_id[0]})
+        db.session.execute(sql, {"user_id": user_id})
         db.session.commit()
         return login(username, password)
     except Exception as e:
@@ -85,14 +85,25 @@ def get_permissions(user_id):
     except Exception as e:
         app.logger.error(f"Database error during getting permissions: {e}")
         return None
+    
+def get_username(user_id):
+    try:
+        sql = text("SELECT username FROM users WHERE id = :user_id")
+        result = db.session.execute(sql, {"user_id": user_id}).fetchone()
+        return result[0]
+    except Exception as e:
+        app.logger.error(f"Database error during getting username: {e}")
+        return None
 
 def refresh_access_token(user_id):
     try:
+        username = get_username(user_id)
         user_permissions = get_permissions(user_id)
         access_token = create_access_token(
             identity=user_id, 
             additional_claims=
             {
+                "username": username,
                 "user_permissions": user_permissions[0], 
                 "public_permissions": user_permissions[1]
             },

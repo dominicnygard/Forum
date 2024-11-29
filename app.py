@@ -1,10 +1,10 @@
 from os import getenv
-from flask import Flask
-from flask_socketio import SocketIO
-from flask_jwt_extended import JWTManager
 from datetime import timedelta
 import logging
 from logging.handlers import RotatingFileHandler
+from flask import Flask
+from flask_socketio import SocketIO
+from flask_jwt_extended import JWTManager
 
 
 
@@ -37,4 +37,3 @@ socketio = SocketIO(app, logger=True, engineio_logger=True)
 
 
 import routes
-
