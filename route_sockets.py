@@ -22,7 +22,7 @@ def handle_connect():
         emit('connected', {'message': 'Connected'})
     except Exception as e:
         app.logger.error(f"Connecting to server failed: {e}")
-        emit('error', {'message': 'An error occurred while connecting to the server'}, to=request.sid)
+        emit('error', {'msg': 'An error occurred while connecting to the server'}, to=request.sid)
         disconnect()
 
 @socketio.on('join')
@@ -36,7 +36,7 @@ def join(data):
         emit('join-confirmation', {'msg': f"{user_id} has entered room {room}"}, room=room)
     except Exception as e:
         app.logger.error(f"Error joining room {room}: {e}")
-        emit('error', {'message': 'An error occurred while joining a room'}, to=request.sid)
+        emit('error', {'msg': 'An error occurred while joining a room'}, to=request.sid)
 
 @socketio.on('send-message')
 @jwt_required()
@@ -62,7 +62,7 @@ def handle_send_message(data):
         emit('update-rooms', room=room_id)
     except Exception as e:
         app.logger.error(f"Error sending message: {e}")
-        emit('error', {'message': 'An error occurred while sending the message'}, to=request.sid)
+        emit('error', {'msg': 'An error occurred while sending the message'}, to=request.sid)
 
 @socketio.on('send-post')
 @jwt_required()
@@ -79,7 +79,7 @@ def handle_send_post(data):
             emit('post_denied', {'msg': "Access denied"})
     except Exception as e:
         app.logger.error(f"Error sending post: {e}")
-        emit('error', {'message': 'An error occurred while sending the post'}, to=request.sid)
+        emit('error', {'msg': 'An error occurred while sending the post'}, to=request.sid)
 
 @socketio.on('send-comment')
 @jwt_required()
@@ -96,7 +96,7 @@ def handle_send_post(data):
             emit('post_denied', {'msg': "Access denied"})
     except Exception as e:
         app.logger.error(f"Error sending comment: {e}")
-        emit('error', {'message': 'An error occurred while sending the comment'}, to=request.sid)
+        emit('error', {'msg': 'An error occurred while sending the comment'}, to=request.sid)
 
 
 

@@ -57,10 +57,18 @@ def register():
             password = request.form["password"]
             confirm_password = request.form["confirm_password"]
             if password != confirm_password:
-                return render_template("error.html", message="Salasanat eroavat")
-            if users.register(username, password):
-                return redirect("/")
-            return redirect("/register")
+                return render_template("register.html", error="The passwords don't match")
+            
+            success = users.register(username, password)
+            if success:
+                response = users.login(username, password)
+                if response:
+                    return response
+                else:
+                    return render_template("error.html", message="Login failed after registration")
+            else:
+                return render_template("register.html", error="Username already exists")
+
     except Exception as e:
         app.logger.error(f"Register error: {e}")
         return render_template("error.html", message="An unexpected error occurred during registration")
@@ -236,14 +244,18 @@ def refresh_expiring_jwts(response):
 @app.context_processor
 def inject_user():
     try:
-        verify_jwt_in_request(optional=True)
-        user_id = get_jwt_identity()
+        user_id = None
+        try:
+            verify_jwt_in_request(optional=True)
+            user_id = get_jwt_identity()
+        except ExpiredSignatureError:
+            pass
+        except Exception as e:
+            app.logger.error(f"Error in context processor: {e}")
         if user_id:
             token = get_jwt()
             username = token.get("username")
             return {'current_user': {'id': user_id, 'username': username}}
-    except ExpiredSignatureError:
-        pass
     except Exception as e:
         app.logger.error(f"Error in context processor: {e}")
     return {'current_user': None}

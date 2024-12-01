@@ -1,12 +1,21 @@
-{% extends "layout.html" %}
-{% block title %}Etusivu{% endblock %}
-{% block content %}
-<form action="/login" method="post">
-    Tunnus: <input type="text" name="username">
-    <p>
-    Salasana: <input type="password" name="password">
-    <p>
-    <input type="submit" value="Kirjaudu">
-    </form>
-Jos sinulla ei ole tunnusta, voit luoda uuden tunnuksen <a href="/register">tästä</a>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device.width, initial-scale=1">
+    </head>
+    {% extends "layout.html" %}
+    {% block title %}Etusivu{% endblock %}
+    <body>
+        {% block content %}
+        <form id="login-form" action="/login" method="post">
+            Tunnus: <input type="text" id="username" name="username">
+            <p>
+            Salasana: <input type="password" id="password" name="password">
+            <p>
+            <input type="submit" value="Kirjaudu">
+            </form>
+        If you do not have an account you can log in here <a href="/register">tästä</a>
+        {% endblock %}
+    </body>
+</html>

@@ -64,3 +64,5 @@ CREATE TABLE PublicPermissions
     permission_id INTEGER REFERENCES Permissions(id),
     PRIMARY KEY (user_id, permission_id)
 );
+
+INSERT INTO Permissions (permission_name) VALUES ('view'), ('send'), ('post'), ('comment'), ('admin')

@@ -1,13 +1,14 @@
 from flask import make_response, redirect
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.sql import text
+from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request, create_access_token, set_access_cookies, unset_jwt_cookies
+from psycopg2.errors import UniqueViolation
 from db import db
 from app import app
 import rooms
 
 active_users = set()
-print(active_users)
 
 def login(username, password):
     try:
@@ -37,10 +38,20 @@ def register(username, password):
         result = db.session.execute(sql, {"username": username, "password": hash_value})
         db.session.commit()
         user_id = result.fetchone()[0]
-        sql = text("INSERT INTO PublicPermissions (user_id, permission_id) VALUES (:user_id, 3), (:user_id, 4)")
+        sql = text("""INSERT INTO PublicPermissions (user_id, permission_id) VALUES 
+                    (:user_id, 3), 
+                    (:user_id, 4)
+                    """)
         db.session.execute(sql, {"user_id": user_id})
         db.session.commit()
-        return login(username, password)
+        return True
+    except IntegrityError as e:
+        db.session.rollback()
+        if isinstance(e.orig, UniqueViolation):
+            return False
+        else:
+            app.logger.error(f"Database error during registration: {e}")
+            raise
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"An error occured inserting registration into database: {e}")
