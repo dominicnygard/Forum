@@ -5,8 +5,7 @@ body {
 .container {  
     display: grid;
     grid-template-columns: 0.4fr 1.6fr 1fr;
-    grid-template-rows: 0.15fr 1.85fr 1fr;
-    gap: 0px 0px;
+    grid-template-rows: 60px auto auto;
     grid-auto-flow: row;
     grid-template-areas:
         "navbar navbar navbar"
@@ -20,6 +19,8 @@ body {
     position: sticky;
     top: 0;
     box-sizing: border-box;
+    height: 60px;
+    z-index: 1000;
 }
   
 .sidebar { 
@@ -27,7 +28,11 @@ body {
     background-color: #5fe466;
 }
   
-.content { grid-area: content; }
+.content { 
+    grid-area: content; 
+    padding-top: 20px;
+
+}
 
 .navbar a {
     float: right;
@@ -68,7 +73,7 @@ body {
     padding: 0px;
 }
 
-.postinfo {
+.post-info {
     background-color: lightgray;
     border-radius: 15px;
     padding: 10px;
@@ -87,4 +92,21 @@ body {
     background-color: lightgray;
     margin: 10px;
     padding: 10px;
+}
+
+#chat-box {
+    border: 1px solid #ccc;
+    height: 400px;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.message p {
+    margin: 5px 0;
 }

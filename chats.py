@@ -4,13 +4,22 @@ from db import db
 from users import user_id
 from app import app
 
-def chat(room_id):
+def chat(room_id, offset=0, limit=30):
     try:
-        sql = text("""SELECT username, C.content, C.sent_at 
-                   FROM (SELECT sender_id, content, sent_at FROM messages WHERE chat_id= :room_id) AS C 
-                   LEFT JOIN users ON id = C.sender_id;
-                   """)
-        return db.session.execute(sql, {"room_id": room_id}).fetchall()
+        sql = text("""
+                SELECT username, content, sent_at 
+                FROM (
+                    SELECT M.sender_id, M.content, M.sent_at
+                    FROM messages M
+                    WHERE M.chat_id = :room_id
+                    ORDER BY M.sent_at DESC
+                    LIMIT :limit OFFSET :offset
+                    ) sub
+                LEFT JOIN users ON users.id = sub.sender_id
+                ORDER BY sub.sent_at DESC
+                """)
+        print(db.session.execute(sql, {"room_id": room_id, "limit": limit, "offset": offset}).fetchall())
+        return db.session.execute(sql, {"room_id": room_id, "limit": limit, "offset": offset}).fetchall()
     except Exception as e:
         app.logger.error(f"Error fetching chat {room_id}: {e}")
         return []

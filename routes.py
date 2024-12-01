@@ -1,6 +1,7 @@
 from app import app, socketio
 from flask import render_template, request, redirect, jsonify, url_for
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
+from jwt.exceptions import ExpiredSignatureError
 from route_sockets import room_permission_required
 import posts, users, chats, rooms
 from datetime import datetime, timedelta
@@ -28,8 +29,7 @@ def handle_unexpected_error(e):
 
 @app.route("/")
 def index():
-    post_list = posts.get_posts()
-    return render_template("index.html", count=len(post_list), messages = post_list)
+    return render_template("index.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -80,8 +80,7 @@ def send():
 def post(id):
     try:
         post = posts.get_post(id)
-        comments = posts.get_comments(id)
-        return render_template("post.html", post_id=id, post=post, comments=comments)
+        return render_template("post.html", post_id=id, post=post)
     except Exception as e:
         app.logger.error(f"Error fetching post {id}: {e}")
         return render_template("error.html", message="An unexpected error occurred while fetching the post"), 500
@@ -92,9 +91,7 @@ def post(id):
 @room_permission_required('view')
 def chat(room_id):
     try:
-        messages = chats.chat(room_id)
-
-        return render_template("chat.html", id=room_id, messages=messages)
+        return render_template("chat.html", id=room_id)
     except Exception as e:
         app.logger.error(f"Error fetching chat {room_id}: {e}")
         return render_template("error.html", message="An unexpected error occurred while fetching the chat"), 500
@@ -146,6 +143,71 @@ def api_get_chats():
         app.logger.error(f"Error fetching chats for user {user_id}: {e}")
         return jsonify({"error": "An unexpected error occurred while fetching the chats"}), 500
     
+@app.route('/load-posts', methods=['GET'])
+def api_load_posts():
+    try:
+        offset = int(request.args.get("offset", 0))
+        limit = int(request.args.get("limit", 10))
+
+        post_data = posts.get_posts(offset, limit)
+        posts_list = []
+        for post in post_data:
+            posts_list.append({
+                "id": post.id,
+                "title": post.title,
+                "content": post.content,
+                "username": post.username,
+                "sent_at": post.sent_at.isoformat()
+            })
+
+        return jsonify(posts_list), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching posts: {e}")
+        return jsonify({"error": "An error occurred while fetching the posts"}), 500
+
+@app.route('/load-comments/<int:post_id>', methods=['GET'])
+def api_load_comments(post_id):
+    try:
+        offset = int(request.args.get("offset", 0))
+        limit = int(request.args.get("limit", 15))
+
+        comments_data = posts.get_comments(post_id, offset, limit)
+        comments_list = []
+        for comment in comments_data:
+            comments_list.append({
+                'username': comment.username,
+                'sent_at': comment.sent_at.isoformat(),
+                'content': comment.content
+            })
+        
+        return jsonify(comments_list), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching comments for post {post_id}: {e}")
+        return jsonify({"error": "An error occurred while fetching comments"}), 500
+                
+@app.route('/load-messages/<int:room_id>', methods=['GET'])
+@jwt_required()
+@room_permission_required('view')
+def api_load_messages(room_id):
+    try:
+        offset = int(request.args.get("offset", 0))
+        limit = int(request.args.get("limit", 30))
+
+        messages_data = chats.chat(room_id, offset, limit)
+        messages_list = []
+        for message in messages_data:
+            messages_list.append({
+                'username': message.username,
+                'sent_at': message.sent_at.isoformat(),
+                'content': message.content
+            })
+
+        return jsonify(messages_list), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching messages for chat {room_id}: {e}")
+        return jsonify({"error": "An error occurred while fetching messages"}), 500
+
+
 @app.route('/refresh', methods=['GET'])
 @jwt_required()
 def refresh():
@@ -173,11 +235,16 @@ def refresh_expiring_jwts(response):
 
 @app.context_processor
 def inject_user():
-    verify_jwt_in_request(optional=True)
-    user_id = get_jwt_identity()
-    if user_id:
-        token = get_jwt()
-        username = token.get("username")
-        return {'current_user': {'id': user_id, 'username': username}}
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            token = get_jwt()
+            username = token.get("username")
+            return {'current_user': {'id': user_id, 'username': username}}
+    except ExpiredSignatureError:
+        pass
+    except Exception as e:
+        app.logger.error(f"Error in context processor: {e}")
     return {'current_user': None}
 

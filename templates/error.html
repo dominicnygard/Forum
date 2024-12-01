@@ -6,8 +6,15 @@
     </head>
     {% block content %}
     <body>
+        {% if current_user %}
         <h1>Error</h1>
         <p>{{ message }}</p>
+        {% else %}
+        <h1>Error</h1>
+        <p>{{ message }}</p>
+        <p>Your session has timed out</p>
+        <a href="/login">Log back in</a>
+        {% endif %}
     </body>
     {% endblock %}
 </html>

@@ -7,6 +7,7 @@ from app import app
 import rooms
 
 active_users = set()
+print(active_users)
 
 def login(username, password):
     try:
@@ -47,8 +48,9 @@ def register(username, password):
 
 def logout():
     response = make_response(redirect("/"))
-    unset_jwt_cookies(response)
     rooms.user_rooms.pop(user_id(), None)
+    active_users.remove(user_id())
+    unset_jwt_cookies(response)
     return response
 
 def user_id():

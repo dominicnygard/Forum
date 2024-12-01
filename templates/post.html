@@ -1,8 +1,95 @@
-
+<!DOCTYPE html>
 <html>
+    {% extends "layout.html" %}
     <head>
+        <title>Post</title>
+    </head>
+    {% block title %}Etusivu{% endblock %}
+    <body>
+        {% block content %}
+        <div class="post">
+            <h1>{{ post.title }}</h1>
+            <p>{{ post.content }}</p>
+            <p>Posted by {{ post.username }} on {{ post.sent_at }}</p>
+        </div>
+        
+        <hr>
+
+        <h3>Comments</h3>
+        <div id="comment-container">
+            
+        </div>
+        <div id="loading-message" style="text-align: center; display: none;">
+            Loading more comments...
+        </div>
+        
+        {% if current_user %}
+        <form id="comment-form">
+            <textarea type="text" id="comment-content"></textarea>
+            <button type="submit">Send</button>
+        </form>
+        {% else %}
+        <p>Please <a href="/login">login</a> to post a comment.</p>
+        {% endif %}
+        {% endblock %}
+        {% block scripts %}
         <script type="text/javascript" charset="utf-8">
             document.addEventListener("DOMContentLoaded", function() {
+                let offset = 0;
+                const commentLimit = 15;
+                let loading = false;
+                let allLoaded = false;
+
+                function loadComments() {
+                    if (loading || allLoaded) return;
+                    loading = true;
+                    document.getElementById("loading-message").style.display = "block";
+
+                    fetch(`/load-comments/{{ post_id }}?offset=${offset}&limit=${commentLimit}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.length === 0) {
+                                allLoaded = true;
+                                document.getElementById("loading-message").style.display = "All comments loaded";
+                            } else {
+                                appendComments(data);
+                                offset += commentLimit;
+                                loading = false;
+                                document.getElementById("loading-message").style.display = "none";
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error loading comments:", error);
+                            loading = false;
+                            document.getElementById("loading-message").style.display = "none";
+                        });
+                }
+
+                function appendComments(comments) {
+                    const container = document.getElementById("comment-container");
+                    comments.forEach(comment => {
+                        const commentElement = document.createElement("div");
+                        commentElement.className = "comment";
+
+                        commentElement.innerHTML = `
+                            <p><strong>${comment.username}</strong> on ${new Date(comment.sent_at).toLocaleString()}</p>
+                            <p>${comment.content}</p>
+                            <hr>
+                        `;
+
+                        container.appendChild(commentElement);
+                    });
+                }
+
+                loadComments();
+
+                window.addEventListener("scroll", function() {
+                if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+                    loadComments();
+                }
+                });
+
+                {% if current_user %}
                 document.getElementById("comment-form").onsubmit = function(event) {
                     event.preventDefault();
                     var commentContent = document.getElementById("comment-content");
@@ -15,36 +102,14 @@
 
                     commentContent.value = "";
                 };
+                {% endif %}
+                socket.on('success', function(data) {
+                    console.log(data.msg);
+                    location.reload();
+                });
             });
         </script>
-    </head>
-    {% extends "layout.html" %}
-    {% block title %}Etusivu{% endblock %}
-    {% block content %}
-    <body>
-        Post id: {{post_id}}
-        <p>
-        {{post}}
-        <p>
-        <hr>
-        <form id="comment-form">
-            <textarea type="text" id="comment-content"></textarea>
-            <button type="submit">Send</button>
-        </form>
-        {% for comment in comments %}
-        <i>käyttäjä:</i> {{ comment[0] }}
-        <p>
-        <i>lähetetty:</i> {{ comment[1] }}
-        <p>
-        <i>teksti:</i> {{ comment[2] }}
-        <hr>
-        {% endfor %}
-        {% if session.user_id %}
-        <p>Olet kirjautunut nimellä {{ session.username }}</p>
-        <a href="{{post_id}}/comment">vastaa</a>
-        {% else %}
-        <a href="/login">kirjaudu</a>
-        {% endif %}
+        {% endblock %}
+
     </body>
-    {% endblock %}
 </html>

@@ -56,7 +56,6 @@ function fetchChats() {
     return response.json();
     })
     .then(data => {
-        console.log(data);
         if (data) {
             for (const key in data) {
                 const array = data[key]

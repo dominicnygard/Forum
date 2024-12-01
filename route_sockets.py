@@ -56,6 +56,7 @@ def handle_send_message(data):
         emit('receive-message', {
             'username': username,
             'message': message,
+            'sent_at': sent_at.isoformat()
         }, room=room_id)
 
         emit('update-rooms', room=room_id)
@@ -90,7 +91,7 @@ def handle_send_post(data):
 
         if has_room_permissions(permission_name='comment', token=token):
             posts.comment(content, id)
-            emit('success', {'url': "/"})
+            emit('success', {'msg': "Comment added successfully"}, to=request.sid)
         else:
             emit('post_denied', {'msg': "Access denied"})
     except Exception as e:
