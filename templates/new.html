@@ -8,7 +8,7 @@
     <body>
         <div>
             <h2>Create New Post</h2>
-            <form id="post-form">
+            <form id="post-form" action="/new" method="POST">
                 <div>
                     <label for="title">Title:</label>
                     <input type="text" id="post-title" name="title" required>
@@ -22,21 +22,47 @@
         </div>
         <script type="text/javascript" charset="utf-8">
             document.addEventListener("DOMContentLoaded", function() {
-                document.getElementById("post-form").onsubmit = function(event) {
-                    event.preventDefault();
-                    var postTitle = document.getElementById("post-title");
-                    var postContent = document.getElementById("post-content");
-                    var postTitleText = postTitle.value;
-                    var postContentText = postContent.value;
+                const form = document.getElementById('post-form');
+                
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault(); 
+                    
+                    const title = document.getElementById('post-title').value;
+                    const content = document.getElementById('post-content').value;
 
-                    socket.emit('send-post', {
-                        title: postTitleText,
-                        content: postContentText
+                    if (title.length < 1 || title.length > 200) {
+                        alert('Please enter a title between 1-200 characters.');
+                        event.preventDefault();
+                        return;
+                    }
+
+                    if (content.length < 1 || content.length > 2000) {
+                        alert('Please enter content between 1-1000 characters.');
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const formData = new FormData(form);
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': "{{csrf_token}}"
+                        },
+                        body: new URLSearchParams(formData)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            location.href = '/';
+                        } else {
+                            console.error('Error submitting post:', response.statusText);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error submitting post:', error);
                     });
-
-                    postTitle.value = "";
-                    postContent.value = "";
-                };
+                });
             });
         </script>
     </body>

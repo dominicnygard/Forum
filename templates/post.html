@@ -24,8 +24,8 @@
         </div>
         
         {% if current_user %}
-        <form id="comment-form">
-            <textarea type="text" id="comment-content"></textarea>
+        <form id="comment-form" action="/post/{{ post_id }}" method="POST">
+            <textarea name = "content" id="comment-content"></textarea>
             <button type="submit">Send</button>
         </form>
         {% else %}
@@ -35,6 +35,42 @@
         {% block scripts %}
         <script type="text/javascript" charset="utf-8">
             document.addEventListener("DOMContentLoaded", function() {
+                const form = document.getElementById('comment-form');
+
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault(); 
+
+                    const content = document.getElementById('comment-content').value;
+
+                    if (content.length < 1 || content.length > 300) {
+                        alert('Please enter a comment between 1-200 characters.');
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const formData = new FormData(form);
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': '{{ csrf_token }}'
+                        },
+                        body: new URLSearchParams(formData)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            console.error('Error submitting comment:', response.statusText);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error submitting comment:', error);
+                    });
+                });
+
+
                 let offset = 0;
                 const commentLimit = 15;
                 let loading = false;
@@ -89,20 +125,6 @@
                 }
                 });
 
-                {% if current_user %}
-                document.getElementById("comment-form").onsubmit = function(event) {
-                    event.preventDefault();
-                    var commentContent = document.getElementById("comment-content");
-                    var commentContentText = commentContent.value;
-
-                    socket.emit('send-comment', {
-                        post_id: "{{post_id}}",
-                        content: commentContentText
-                    });
-
-                    commentContent.value = "";
-                };
-                {% endif %}
                 socket.on('success', function(data) {
                     console.log(data.msg);
                     location.reload();

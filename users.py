@@ -22,8 +22,6 @@ def login(username, password):
                response = refresh_access_token(user.id)
                if response:
                    active_users.add(user.id)
-                   response.headers['location'] = "/"
-                   response.status_code = 302
                    return response
             else:
                 return False
@@ -122,9 +120,6 @@ def refresh_access_token(user_id):
             },
         )
         response = make_response()
-
-        response.delete_cookie('access_token_cookie')
-        response.delete_cookie('csrf_access_token')
 
         set_access_cookies(response, access_token)
         return response

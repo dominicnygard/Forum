@@ -47,8 +47,6 @@ def get_post(id):
 def comment(content, id):
     try:
         user_id = users.user_id()
-        if user_id == 0:
-            return False
         sql = text("""
                    INSERT INTO comments (content, user_id, post_id, sent_at) 
                    VALUES (:content, :user_id, :post_id, NOW())

@@ -3,7 +3,7 @@ from flask_socketio import join_room, emit, disconnect
 from flask import abort, request
 from functools import wraps
 from flask_jwt_extended import jwt_required, get_jwt, verify_jwt_in_request
-import users, chats, posts, rooms
+import users, chats, rooms
 
 @socketio.on('connect')
 def handle_connect():
@@ -63,42 +63,6 @@ def handle_send_message(data):
     except Exception as e:
         app.logger.error(f"Error sending message: {e}")
         emit('error', {'msg': 'An error occurred while sending the message'}, to=request.sid)
-
-@socketio.on('send-post')
-@jwt_required()
-def handle_send_post(data):
-    try:
-        title = data['title']
-        content = data['content']
-        token = get_jwt()
-
-        if has_room_permissions(permission_name='post', token=token):
-            posts.send(title, content)
-            emit('redirect', {'url': "/"}, to=request.sid)
-        else:
-            emit('post_denied', {'msg': "Access denied"})
-    except Exception as e:
-        app.logger.error(f"Error sending post: {e}")
-        emit('error', {'msg': 'An error occurred while sending the post'}, to=request.sid)
-
-@socketio.on('send-comment')
-@jwt_required()
-def handle_send_post(data):
-    try:
-        content = data['content']
-        id = data['post_id']
-        token = get_jwt()
-
-        if has_room_permissions(permission_name='comment', token=token):
-            posts.comment(content, id)
-            emit('success', {'msg': "Comment added successfully"}, to=request.sid)
-        else:
-            emit('post_denied', {'msg': "Access denied"})
-    except Exception as e:
-        app.logger.error(f"Error sending comment: {e}")
-        emit('error', {'msg': 'An error occurred while sending the comment'}, to=request.sid)
-
-
 
 def has_room_permissions(room_id=None, permission_name="", token=None):
     if token is None:

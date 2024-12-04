@@ -86,6 +86,11 @@
                     event.preventDefault();
                     var messageInput = document.getElementById("message-input");
                     var messageText = messageInput.value;
+
+                    if (messageText.length < 1 || messageText.length > 200) {
+                        alert('Please enter a message between 1-500 characters.');
+                        return;
+                    }
                     
                     socket.emit('send-message', {
                         room_id: "{{ id }}",

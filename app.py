@@ -19,7 +19,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True
 app.config['JWT_COOKIE_SECURE'] = True
-app.config['JWT_COOKIE_SAMESITE'] = "strict"
+app.config['JWT_COOKIE_SAMESITE'] = 'strict'
 
 app.config["JWT_ACCESS_COOKIE_PATH"] = "/"
 

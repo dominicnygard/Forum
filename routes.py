@@ -1,8 +1,9 @@
+import re
 from app import app, socketio
 from flask import render_template, request, redirect, jsonify, url_for
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
 from jwt.exceptions import ExpiredSignatureError
-from route_sockets import room_permission_required
+from route_sockets import room_permission_required, has_room_permissions
 import posts, users, chats, rooms
 from datetime import datetime, timedelta
 
@@ -39,10 +40,20 @@ def login():
         if request.method == "POST":
             username = request.form["username"]
             password = request.form["password"]
+
+            if len(username) < 4 or len(username) > 20:
+                return render_template("login.html", error="Invalid username, username must be between 4 and 20 characters long")
+            if len(password) < 8 or len(password) > 20:
+                return render_template("login.html", error="Invalid password, password must be between 8 and 20 characters long")
+            
             response = users.login(username, password)
             if response:
+                response.headers['location'] = url_for("index")
+                response.status_code = 302
                 return response
-            return redirect("/login")
+            else:
+                return render_template("login.html", error="Wrong username or password")
+                
     except Exception as e:
         app.logger.error(f"Login error: {e}")
         return render_template("error.html", message="An unexpected error occurred during login")
@@ -56,16 +67,16 @@ def register():
             username = request.form["username"]
             password = request.form["password"]
             confirm_password = request.form["confirm_password"]
+            if re.fullmatch(r"^[a-zA-Z0-9_.]{4,20}$", username) is None:
+                return render_template("register.html", error="Invalid username, username must be between 4 and 20 characters long")
+            if re.fullmatch(r"^[a-zA-Z0-9_#%&$!*?.;:~^]{8,20}$", password) is None:
+                return render_template("register.html", error="Invalid password, password must be between 8 and 20 characters long")
             if password != confirm_password:
                 return render_template("register.html", error="The passwords don't match")
             
             success = users.register(username, password)
             if success:
-                response = users.login(username, password)
-                if response:
-                    return response
-                else:
-                    return render_template("error.html", message="Login failed after registration")
+                return redirect(url_for("login"))
             else:
                 return render_template("register.html", error="Username already exists")
 
@@ -78,20 +89,48 @@ def logout():
     response = users.logout()
     return response
 
-@app.route("/new")
+@app.route("/new", methods=["GET", "POST"])
 @jwt_required()
 @room_permission_required('post')
-def send():
-    return render_template("new.html")
+def new_post():
+    if request.method == "GET":
+        try:
+            csrf_token = get_jwt()["csrf"]
+        except Exception as e:
+            app.logger.error(f"Error fetching CSRF token: {e}")
+        return render_template("new.html", csrf_token=csrf_token)
+    if request.method == "POST":
+        if not has_room_permissions(permission_name='post', token=get_jwt()):
+            return render_template("error.html", message="You are not permitted to post"), 403
+        title = request.form["title"]
+        content = request.form["content"]
+        posts.send(title, content)
+        return redirect(url_for("index"))
 
-@app.route("/post/<int:id>")
-def post(id):
+@app.route("/post/<int:post_id>", methods=["GET", "POST"])
+def post(post_id):
     try:
-        post = posts.get_post(id)
-        return render_template("post.html", post_id=id, post=post)
+        if request.method == "GET":
+            verify_jwt_in_request(optional=True)
+            post = posts.get_post(post_id)
+            csrf_token = None
+
+            try:
+                csrf_token = get_jwt()["csrf"]
+            except Exception as e:
+                app.logger.error(f"Error fetching CSRF token: {e}")
+
+            return render_template("post.html", post_id=post_id, post=post, csrf_token=csrf_token)
+        if request.method == "POST":
+            verify_jwt_in_request()
+            content = request.form["content"]
+            if has_room_permissions(permission_name='comment', token=get_jwt()):
+                posts.comment(content, post_id)
+                return redirect(url_for('post', post_id=post_id))
+
     except Exception as e:
-        app.logger.error(f"Error fetching post {id}: {e}")
-        return render_template("error.html", message="An unexpected error occurred while fetching the post"), 500
+        app.logger.error(f"Error fetching post {post_id}: {e}")
+        return render_template("error.html", message=f"An error occured while loading the page for post {post_id}")
         
 
 @app.route("/chat/<int:room_id>", methods=["GET"])
@@ -243,20 +282,15 @@ def refresh_expiring_jwts(response):
 
 @app.context_processor
 def inject_user():
+    user = None
     try:
-        user_id = None
-        try:
-            verify_jwt_in_request(optional=True)
-            user_id = get_jwt_identity()
-        except ExpiredSignatureError:
-            pass
-        except Exception as e:
-            app.logger.error(f"Error in context processor: {e}")
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
         if user_id:
             token = get_jwt()
             username = token.get("username")
-            return {'current_user': {'id': user_id, 'username': username}}
+            user = {"id": user_id, "username": username}
     except Exception as e:
         app.logger.error(f"Error in context processor: {e}")
-    return {'current_user': None}
+    return {'current_user': user}
 

@@ -19,7 +19,7 @@
         <p>Salasana toistettu:<br>
         <input type="password" id="confirm_password" name="confirm_password"></p>
         <input type="submit" value="Register">
-        </form>
+    </form>
     {% endblock %}
 
     {% block scripts %}
@@ -32,8 +32,8 @@
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm_password').value;
 
-                const usernamePattern = /^[a-zA-Z0-9_]{4,20}$/;
-                const passwordPattern = /^[a-zA-Z0-9_#%&$!*?]{8,20}$/;
+                const usernamePattern = /^[a-zA-Z0-9_.]{4,20}$/;
+                const passwordPattern = /^[a-zA-Z0-9_#%&$!*?.;:~^]{8,20}$/;
 
                 if (!usernamePattern.test(username)) {
                     alert('Please enter a valid username between 4-20 characters, with no special characters except underscores.');

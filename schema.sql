@@ -23,6 +23,12 @@ CREATE TABLE Comments
     sent_at     TIMESTAMP
 );
 
+CREATE TABLE chats
+(
+    id              SERIAL PRIMARY KEY,
+    room_id         TEXT UNIQUE
+);
+
 Create TABLE Messages
 (
     id              SERIAL PRIMARY KEY,
@@ -32,11 +38,6 @@ Create TABLE Messages
     sent_at         TIMESTAMP
 );
 
-CREATE TABLE chats
-(
-    id              SERIAL PRIMARY KEY,
-    room_id         TEXT UNIQUE
-);
 
 CREATE TABLE chatParticipants (
     chat_id         INTEGER REFERENCES chats(id),
