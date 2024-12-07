@@ -94,11 +94,7 @@ def logout():
 @room_permission_required('post')
 def new_post():
     if request.method == "GET":
-        try:
-            csrf_token = get_jwt()["csrf"]
-        except Exception as e:
-            app.logger.error(f"Error fetching CSRF token: {e}")
-        return render_template("new.html", csrf_token=csrf_token)
+        return render_template("new.html")
     if request.method == "POST":
         if not has_room_permissions(permission_name='post', token=get_jwt()):
             return render_template("error.html", message="You are not permitted to post"), 403
@@ -107,30 +103,43 @@ def new_post():
         posts.send(title, content)
         return redirect(url_for("index"))
 
-@app.route("/post/<int:post_id>", methods=["GET", "POST"])
+@app.route("/post/<int:post_id>", methods=["GET", "POST", "DELETE"])
 def post(post_id):
     try:
         if request.method == "GET":
             verify_jwt_in_request(optional=True)
             post = posts.get_post(post_id)
-            csrf_token = None
-
-            try:
-                csrf_token = get_jwt()["csrf"]
-            except Exception as e:
-                app.logger.error(f"Error fetching CSRF token: {e}")
-
-            return render_template("post.html", post_id=post_id, post=post, csrf_token=csrf_token)
-        if request.method == "POST":
+            return render_template("post.html", post_id=post_id, post=post)
+    except Exception as e:
+        app.logger.error(f"Error fetching post {post_id}: {e}")
+        return render_template("error.html", message=f"An error occured while loading the page for post {post_id}")
+            
+    if request.method == "POST":
+        try:
             verify_jwt_in_request()
             content = request.form["content"]
             if has_room_permissions(permission_name='comment', token=get_jwt()):
                 posts.comment(content, post_id)
                 return redirect(url_for('post', post_id=post_id))
+        except Exception as e:
+            app.logger.error(f"Error posting comment to post {post_id}: {e}")
+            return render_template("error.html", message="An error occurred while posting the comment"), 500
+    if request.method == "DELETE":
+        try:
+            verify_jwt_in_request()
+            comment_id = int(request.args.get("comment_id", 0))
+            user_id = get_jwt_identity()
+            comment = posts.check_user_comment(user_id, comment_id)
+            if comment is None:
+                return render_template("error.html", message="You are not permitted to delete this comment"), 403
+            if has_room_permissions(permission_name='delete', token=get_jwt()):
+                posts.delete_comment(comment_id, user_id)
+                return jsonify({"message": "Comment deleted"}), 200
+            return render_template("error.html", message="You are not permitted to delete this post"), 403
+        except Exception as e:
+            app.logger.error(f"Error deleting comment on post {post_id}: {e}")
+            return render_template("error.html", message="An error occurred while deleting comment"), 500
 
-    except Exception as e:
-        app.logger.error(f"Error fetching post {post_id}: {e}")
-        return render_template("error.html", message=f"An error occured while loading the page for post {post_id}")
         
 
 @app.route("/chat/<int:room_id>", methods=["GET"])
@@ -223,8 +232,9 @@ def api_load_comments(post_id):
         for comment in comments_data:
             comments_list.append({
                 'username': comment.username,
-                'sent_at': comment.sent_at.isoformat(),
-                'content': comment.content
+                'sent_at':  comment.sent_at.isoformat(),
+                'content':  comment.content,
+                'id':       comment.id
             })
         
         return jsonify(comments_list), 200
@@ -246,7 +256,8 @@ def api_load_messages(room_id):
             messages_list.append({
                 'username': message.username,
                 'sent_at': message.sent_at.isoformat(),
-                'content': message.content
+                'content': message.content,
+                'message_id': message.id
             })
 
         return jsonify(messages_list), 200
@@ -254,6 +265,20 @@ def api_load_messages(room_id):
         app.logger.error(f"Error fetching messages for chat {room_id}: {e}")
         return jsonify({"error": "An error occurred while fetching messages"}), 500
 
+@app.route('/delete-post/<int:post_id>', methods=['DELETE'])
+@jwt_required()
+@room_permission_required('delete')
+def api_delete_post(post_id):
+    user_id = get_jwt_identity()
+    user_post = posts.check_user_post(user_id, post_id)
+    if user_post is None:
+        return jsonify({"error": "You are not permitted to delete this post"}), 403
+    try:
+        posts.delete_post(post_id, get_jwt_identity())
+        return jsonify({"msg": "Post deleted"}), 200
+    except Exception as e:
+        app.logger.error(f"Error deleting post {post_id}: {e}")
+        return jsonify({"error": "An error occurred while deleting the post"}), 500
 
 @app.route('/refresh', methods=['GET'])
 @jwt_required()

@@ -69,6 +69,31 @@ function fetchChats() {
     });
 }
 
+function deleteContent(url) {
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCookie('csrf_access_token')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.msg) {
+            location.reload();
+        } else {
+            alert('An error occured while deleting content');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     var socket = io({
         withCredentials: true
@@ -92,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     socket.on('error', function(error) {
-        alert(error.message)
+        alert(error.msg);
     });
 
     socket.on('refresh-token', function() {

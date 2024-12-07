@@ -19,7 +19,7 @@ def handle_connect():
             join_room(room)
         user_id = users.user_id()
         join_room(f"user_{user_id}")
-        emit('connected', {'message': 'Connected'})
+        emit('connected', {'message': 'Connected'}, to=request.sid)
     except Exception as e:
         app.logger.error(f"Connecting to server failed: {e}")
         emit('error', {'msg': 'An error occurred while connecting to the server'}, to=request.sid)
@@ -64,6 +64,20 @@ def handle_send_message(data):
         app.logger.error(f"Error sending message: {e}")
         emit('error', {'msg': 'An error occurred while sending the message'}, to=request.sid)
 
+@socketio.on('delete-message')
+def handle_delete_message(data):
+    verify_jwt_in_request()
+    message_id = data['message_id']
+    room_id = data['room_id']
+    user_id = users.user_id()
+
+    if not has_room_permissions(room_id, 'delete', get_jwt()):
+        emit('error', {'msg': 'You do not have permission to delete messages'}, to=request.sid)
+        return
+    
+    chats.delete_message(message_id, user_id)
+    emit('message-deleted', {'message_id': message_id}, room=room_id)
+
 def has_room_permissions(room_id=None, permission_name="", token=None):
     if token is None:
         token = get_jwt()
@@ -85,7 +99,6 @@ def room_permission_required(permission_name):
 
 
             room_id = kwargs.get('room_id')
-            print(room_id)
 
             if not has_room_permissions(room_id, permission_name, jwt_data):
                 abort(403, description=f"Missing required permission: {permission_name}")

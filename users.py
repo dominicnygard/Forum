@@ -32,11 +32,16 @@ def login(username, password):
 def register(username, password):
     hash_value = generate_password_hash(password)
     try:
-        sql = text("INSERT INTO users (username, password) VALUES (:username, :password) RETURNING id")
+        sql = text("""
+                    INSERT INTO users (username, password) 
+                    VALUES (:username, :password) 
+                    RETURNING id
+                    """)
         result = db.session.execute(sql, {"username": username, "password": hash_value})
         db.session.commit()
         user_id = result.fetchone()[0]
-        sql = text("""INSERT INTO PublicPermissions (user_id, permission_id) VALUES 
+        sql = text("""
+                    INSERT INTO PublicPermissions (user_id, permission_id) VALUES 
                     (:user_id, 3), 
                     (:user_id, 4)
                     """)

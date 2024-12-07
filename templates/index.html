@@ -18,11 +18,14 @@
     
     {% block scripts %}
     <script>
+        const currentUsername = "{{ current_user.username if current_user else 'null' }}";
+
         document.addEventListener("DOMContentLoaded", function() {
             let offset = 0;
             const postLimit = 10;
             let loading = false;
             let allLoaded = false;
+            console.log('currentUsername', currentUsername);
 
             function loadPosts() {
                 if (loading || allLoaded) return;
@@ -55,6 +58,11 @@
                     const postElement = document.createElement("div");
                     postElement.className = "post";
 
+                    let deleteButtonHtml = '';
+                    if (currentUsername === post.username) {
+                        deleteButtonHtml = `<button class="delete-post" data-post-id="${post.id}">Delete</button>`;
+                    }
+
                     postElement.innerHTML = `
                         <div class="post-info">
                             <p>Posted by ${post.username} on ${new Date(post.sent_at).toLocaleString()}</p>
@@ -63,15 +71,23 @@
                             <h2>${post.title}</h2>
                             <p>${post.content}</p>
                             <a href="/post/${post.id}">Read more</a>
+                            ${deleteButtonHtml}
                         </div>
                         <hr>
                     `;
                     container.appendChild(postElement);
+
+                    const deleteButton = postElement.querySelector('.delete-post');
+                    if (deleteButton) {
+                        deleteButton.addEventListener('click', function() {
+                            deleteContent(`/delete-post/${post.id}`);
+                        });
+                    }
                 });
             }
 
             loadPosts();
-
+            
             window.addEventListener("scroll", function() {
                 if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
                     loadPosts();

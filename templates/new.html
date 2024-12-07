@@ -26,7 +26,7 @@
                 
                 form.addEventListener('submit', function(event) {
                     event.preventDefault(); 
-                    
+
                     const title = document.getElementById('post-title').value;
                     const content = document.getElementById('post-content').value;
 
@@ -43,12 +43,13 @@
                     }
 
                     const formData = new FormData(form);
+
                     
                     fetch(form.action, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRF-TOKEN': "{{csrf_token}}"
+                            'X-CSRF-TOKEN': getCookie('csrf_access_token')
                         },
                         body: new URLSearchParams(formData)
                     })

@@ -32,14 +32,14 @@ def send(title, content):
         app.logger.error(f"Error inserting post into database: {e}")
         raise
 
-def get_post(id):
+def get_post(post_id):
     try:
         sql = text("""
                    SELECT P.title, P.content, U.username, P.sent_at 
                    FROM Posts P, Users U 
                    WHERE P.id = :id AND P.user_id=U.id
                    """)
-        return db.session.execute(sql, {"id":id}).fetchone()
+        return db.session.execute(sql, {"id":post_id}).fetchone()
     except Exception as e:
         app.logger.error(f"Error fetching post from database: {e}")
         return None
@@ -61,7 +61,7 @@ def comment(content, id):
 def get_comments(post_id, offset=0, limit=15):
     try:
         sql = text("""
-                   SELECT U.username, C.sent_at, C.content 
+                   SELECT U.username, C.sent_at, C.content, C.id 
                    FROM Comments C, Users U 
                    WHERE C.post_id = :id AND C.user_id=U.id 
                    ORDER BY C.sent_at DESC
@@ -71,3 +71,55 @@ def get_comments(post_id, offset=0, limit=15):
     except Exception as e:
         app.logger.error(f"Error fetching comments from database: {e}")
         return []
+
+def check_user_post(user_id, post_id):
+    try:
+        sql = text("""
+                   SELECT P.id 
+                   FROM Posts P 
+                   WHERE P.id = :post_id AND P.user_id = :user_id 
+                   """)
+        return db.session.execute(sql, {"user_id":user_id, "post_id":post_id}).fetchone()
+    except Exception as e:
+        app.logger.error(f"Error fetching user {user_id} post {post_id} from database: {e}")
+        return None
+
+def check_user_comment(user_id, comment_id):
+    try:
+        sql = text("""
+                   SELECT C.id 
+                   FROM Comments C 
+                   WHERE C.id = :comment_id AND C.user_id = :user_id 
+                   """)
+        return db.session.execute(sql, {"user_id":user_id, "comment_id":comment_id}).fetchone()
+    except Exception as e:
+        app.logger.error(f"Error fetching user {user_id} comment {comment_id} from database: {e}")
+        return None
+
+def delete_post(post_id, user_id):
+    try:
+        sql = text("""
+                   DELETE FROM Posts 
+                   WHERE id = :id AND user_id = :user_id
+                   """)
+        db.session.execute(sql, {"id":post_id, "user_id":user_id})
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting post from database: {e}")
+        return False
+    
+def delete_comment(comment_id, user_id):
+    try:
+        sql = text("""
+                   DELETE FROM Comments 
+                   WHERE id = :id AND user_id = :user_id
+                   """)
+        db.session.execute(sql, {"id":comment_id, "user_id":user_id})
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting comment from database: {e}")
+        return False

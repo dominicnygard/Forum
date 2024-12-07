@@ -34,56 +34,23 @@
         {% endblock %}
         {% block scripts %}
         <script type="text/javascript" charset="utf-8">
+            const currentUsername = "{{ current_user.username if current_user else 'null' }}";
+            const post_id = parseInt("{{ post_id }}");
+
             document.addEventListener("DOMContentLoaded", function() {
-                const form = document.getElementById('comment-form');
-
-                form.addEventListener('submit', function(event) {
-                    event.preventDefault(); 
-
-                    const content = document.getElementById('comment-content').value;
-
-                    if (content.length < 1 || content.length > 300) {
-                        alert('Please enter a comment between 1-200 characters.');
-                        event.preventDefault();
-                        return;
-                    }
-
-                    const formData = new FormData(form);
-
-                    fetch(form.action, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRF-TOKEN': '{{ csrf_token }}'
-                        },
-                        body: new URLSearchParams(formData)
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            location.reload();
-                        } else {
-                            console.error('Error submitting comment:', response.statusText);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error submitting comment:', error);
-                    });
-                });
-
-
                 let offset = 0;
                 const commentLimit = 15;
                 let loading = false;
                 let allLoaded = false;
-
+                
                 function loadComments() {
                     if (loading || allLoaded) return;
                     loading = true;
                     document.getElementById("loading-message").style.display = "block";
-
+                    
                     fetch(`/load-comments/{{ post_id }}?offset=${offset}&limit=${commentLimit}`)
-                        .then(response => response.json())
-                        .then(data => {
+                    .then(response => response.json())
+                    .then(data => {
                             if (data.length === 0) {
                                 allLoaded = true;
                                 document.getElementById("loading-message").style.display = "All comments loaded";
@@ -99,37 +66,80 @@
                             loading = false;
                             document.getElementById("loading-message").style.display = "none";
                         });
-                }
+                    }
 
-                function appendComments(comments) {
-                    const container = document.getElementById("comment-container");
-                    comments.forEach(comment => {
-                        const commentElement = document.createElement("div");
-                        commentElement.className = "comment";
+                    function appendComments(comments) {
+                        const container = document.getElementById("comment-container");
+                        comments.forEach(comment => {
+                            const commentElement = document.createElement("div");
+                            commentElement.className = "comment";
+                            
+                            let deleteButtonHtml = '';
+                            if (currentUsername === comment.username) {
+                                deleteButtonHtml = '<button class="delete-comment">Delete</button>';
+                            }
 
-                        commentElement.innerHTML = `
-                            <p><strong>${comment.username}</strong> on ${new Date(comment.sent_at).toLocaleString()}</p>
-                            <p>${comment.content}</p>
-                            <hr>
-                        `;
+                            commentElement.innerHTML = `
+                                <p><strong>${comment.username}</strong> on ${new Date(comment.sent_at).toLocaleString()}</p>
+                                <p>${comment.content}</p>
+                                ${deleteButtonHtml}
+                                <hr>
+                                `;
+                            
+                            container.appendChild(commentElement);
 
-                        container.appendChild(commentElement);
-                    });
-                }
-
-                loadComments();
-
-                window.addEventListener("scroll", function() {
-                if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+                            const deleteButton = commentElement.querySelector('.delete-comment');
+                            if (deleteButton) {
+                                deleteButton.addEventListener('click', function() {
+                                    deleteContent(`/post/${post_id}?comment_id=${comment.id}`);
+                                });
+                            }
+                        });
+                    }
+                    
                     loadComments();
-                }
+                    
+                    window.addEventListener("scroll", function() {
+                        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+                            loadComments();
+                        }
+                    });
+                    
+                    const form = document.getElementById('comment-form');
+    
+                    form.addEventListener('submit', function(event) {
+                        event.preventDefault(); 
+    
+                        const content = document.getElementById('comment-content').value;
+    
+                        if (content.length < 1 || content.length > 300) {
+                            alert('Please enter a comment between 1-200 characters.');
+                            event.preventDefault();
+                            return;
+                        }
+    
+                        const formData = new FormData(form);
+    
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRF-TOKEN': getCookie('csrf_access_token')
+                            },
+                            body: new URLSearchParams(formData)
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                location.reload();
+                            } else {
+                                console.error('Error submitting comment:', response.statusText);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error submitting comment:', error);
+                        });
+                    });
                 });
-
-                socket.on('success', function(data) {
-                    console.log(data.msg);
-                    location.reload();
-                });
-            });
         </script>
         {% endblock %}
 

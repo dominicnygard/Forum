@@ -7,9 +7,9 @@ from app import app
 def chat(room_id, offset=0, limit=30):
     try:
         sql = text("""
-                SELECT username, content, sent_at 
+                SELECT username, content, sent_at, sub.id AS id 
                 FROM (
-                    SELECT M.sender_id, M.content, M.sent_at
+                    SELECT M.sender_id, M.content, M.sent_at, M.id
                     FROM messages M
                     WHERE M.chat_id = :room_id
                     ORDER BY M.sent_at DESC
@@ -18,7 +18,6 @@ def chat(room_id, offset=0, limit=30):
                 LEFT JOIN users ON users.id = sub.sender_id
                 ORDER BY sub.sent_at DESC
                 """)
-        print(db.session.execute(sql, {"room_id": room_id, "limit": limit, "offset": offset}).fetchall())
         return db.session.execute(sql, {"room_id": room_id, "limit": limit, "offset": offset}).fetchall()
     except Exception as e:
         app.logger.error(f"Error fetching chat {room_id}: {e}")
@@ -65,3 +64,16 @@ def create_room(id):
     db.session.commit()
 
     return id_room[0]
+
+def delete_message(message_id, user_id):
+    try:
+        sql = text("""
+                   DELETE FROM messages 
+                   WHERE id = :id AND sender_id = :user_id
+                   """)
+        db.session.execute(sql, {"id": message_id, "user_id": user_id})
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting message  {message_id} from database: {e}")
+        raise

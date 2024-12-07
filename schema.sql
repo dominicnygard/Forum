@@ -17,7 +17,7 @@ CREATE TABLE Posts
 CREATE TABLE Comments
 (
     id          SERIAL PRIMARY KEY,
-    post_id     INTEGER REFERENCES Posts(id),
+    post_id     INTEGER REFERENCES Posts(id) ON DELETE CASCADE,
     user_id     INTEGER REFERENCES Users(id),
     content     TEXT,
     sent_at     TIMESTAMP
@@ -32,7 +32,7 @@ CREATE TABLE chats
 Create TABLE Messages
 (
     id              SERIAL PRIMARY KEY,
-    chat_id         INTEGER REFERENCES chats(id),
+    chat_id         INTEGER REFERENCES chats(id) ON DELETE CASCADE,
     sender_id       INTEGER REFERENCES Users(id),
     content         TEXT,
     sent_at         TIMESTAMP
@@ -66,4 +66,4 @@ CREATE TABLE PublicPermissions
     PRIMARY KEY (user_id, permission_id)
 );
 
-INSERT INTO Permissions (permission_name) VALUES ('view'), ('send'), ('post'), ('comment'), ('admin')
+INSERT INTO Permissions (permission_name) VALUES ('view'), ('send'), ('post'), ('comment'), ('delete') ('admin')
