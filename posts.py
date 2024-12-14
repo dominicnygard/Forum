@@ -3,16 +3,17 @@ import users
 from app import app
 from sqlalchemy.sql import text
 
-def get_posts(offset=0, limit=10):
+def get_posts(offset=0, limit=10, search = ''):
     try:
+        search = "%" + search + "%"
         sql = text("""
                 SELECT P.title, P.content, U.username, P.sent_at, P.id 
                 FROM Posts P, Users U 
-                WHERE P.user_id=U.id 
+                WHERE P.user_id=U.id AND P.title ILIKE :search
                 ORDER BY P.sent_at DESC
                 LIMIT :limit OFFSET :offset
                 """)
-        return db.session.execute(sql, {"limit": limit, "offset": offset}).fetchall()
+        return db.session.execute(sql, {"search": search, "limit": limit, "offset": offset}).fetchall()
     except Exception as e:
         app.logger.error(f"Error fetching posts from database: {e}")
         return []

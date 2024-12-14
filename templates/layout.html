@@ -9,28 +9,60 @@
     <body>
         <div class="container">
             <div class="navbar">
+                <div class="navbar-left">
+                    <a href="/" class="main">Forum</a>
+                </div>
+                <div class="navbar-center">
+                    <form id="search-form" action="/" method="GET">
+                        <div class="search-container">
+                            <input type="text" name="search" placeholder="Search" value="{{ search_query }}">
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                fill="none" viewBox="0 0 24 24" 
+                                stroke-width="1.5" 
+                                stroke="currentColor" 
+                                class="search-icon">
+                                <path 
+                                    stroke-linecap="round" 
+                                    stroke-linejoin="round" 
+                                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" 
+                                />
+                            </svg>
+                        </div>
+                    </form>
+                </div>
                 {% if current_user %}
-                    <a href="/" class="left">Forum</a>
+                <div class="navbar-right">
                     <span>You are currently logged in as {{ current_user.username }}</span>
                     <a href="/logout">Log out</a>
+                </div>
                 {% else %}
-                    <a href="/" class="left">Forum</a>
-                    <a href="/register">Rekisteröi</a>
-                    <a href="/login">Kirjaudu</a>
+                <div class="navbar-right">
+                    <a href="/register">Register</a>
+                    <a href="/login">Login</a>
+                </div>
                 {% endif %}                
             </div>
-            <div class="sidebar">
-                <div id="chat-list">
-                    
+            <div class="main-content">
+                <div class="sidebar">
+                    <h2>Your Chats</h2>
+                    <div id="chat-list">
+                        
+                    </div>
                 </div>
-            </div>
-            <div class="content">
-                {% block content %}{% endblock %}
+                <div class="content">
+                    {% block content %}{% endblock %}
+                </div>
             </div>
         </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
         <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
         <script src="{{url_for('static', filename='js/socket.js')}}"></script>
+        <script>
+            document.querySelector('.search-icon').addEventListener('click', function() {
+                document.getElementById('search-form').submit();
+            });
+        </script>
         {% block scripts %}{% endblock %}
     </body>
 </html>

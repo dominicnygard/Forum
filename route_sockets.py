@@ -49,7 +49,7 @@ def handle_send_message(data):
         sent_at = chats.send_chat(room_id, message)
         other_user_id = rooms.get_other_user(users.user_id(), room_id)
 
-        rooms.update_room(users.user_id(), other_user_id, room_id, sent_at.isoformat())
+        rooms.update_room(users.user_id(), other_user_id, room_id, sent_at.isoformat(), message)
 
         token = get_jwt()
         username = token.get('username')

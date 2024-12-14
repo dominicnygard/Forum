@@ -19,20 +19,20 @@
     {% block scripts %}
     <script>
         const currentUsername = "{{ current_user.username if current_user else 'null' }}";
+        const searchQuery = "{{ search_query }}";
 
         document.addEventListener("DOMContentLoaded", function() {
             let offset = 0;
             const postLimit = 10;
             let loading = false;
             let allLoaded = false;
-            console.log('currentUsername', currentUsername);
 
             function loadPosts() {
                 if (loading || allLoaded) return;
                 loading = true;
                 document.getElementById("loading-message").style.display = "block";
 
-                fetch(`/load-posts?offset=${offset}&limit=${postLimit}`)
+                fetch(`/load-posts?offset=${offset}&limit=${postLimit}&search_query=${encodeURIComponent(searchQuery)}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.length === 0) {

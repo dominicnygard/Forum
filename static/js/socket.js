@@ -3,7 +3,7 @@ function openChat(chatId) {
     window.location.href = `/chat/${chatId}`;
 }
 
-function addChatToList(roomId, userId, username) {
+function addChatToList(roomId, username, last_active, last_message) {
     const chatList = document.getElementById('chat-list');
     
     if (document.getElementById(`chat-${roomId}`)) {
@@ -14,10 +14,14 @@ function addChatToList(roomId, userId, username) {
     const chatElement = document.createElement('div');
     chatElement.id = `chat-${roomId}`;
     chatElement.className = 'chat-item';
+    chatElement.onclick = function() {
+        openChat(roomId);
+    }
     
     chatElement.innerHTML = `
-    <p><strong>Chat with:</strong> ${username}</p>
-    <button onclick="openChat('${roomId}')">Open Chat</button>
+        <p class="chat-username">${username}</p>
+        <p class="chat-last-message">${last_message || 'No messages yet'}</p>
+        <p class="chat-timestamp">${last_active ? new Date(last_active).toLocaleString() : ''}</p>
     `;
     
     chatList.appendChild(chatElement);
@@ -59,7 +63,7 @@ function fetchChats() {
         if (data) {
             for (const key in data) {
                 const array = data[key]
-                addChatToList(array[0], array[1][0], array[1][1]);
+                addChatToList(array[0], array[1][1], array[1][2], array[1][3]);
             }
         }
     })

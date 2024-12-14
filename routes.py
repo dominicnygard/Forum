@@ -30,7 +30,8 @@ def handle_unexpected_error(e):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    search_query = request.args.get("search", "")
+    return render_template("index.html", search_query=search_query)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -204,8 +205,9 @@ def api_load_posts():
     try:
         offset = int(request.args.get("offset", 0))
         limit = int(request.args.get("limit", 10))
+        search_query = request.args.get("search_query", '')
 
-        post_data = posts.get_posts(offset, limit)
+        post_data = posts.get_posts(offset, limit, search_query)
         posts_list = []
         for post in post_data:
             posts_list.append({

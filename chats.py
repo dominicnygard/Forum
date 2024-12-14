@@ -30,8 +30,8 @@ def send_chat(room_id, content):
                    VALUES (:chat_id, :sender_id, :content, NOW()) RETURNING sent_at""")
         result = db.session.execute(sql, {"chat_id":room_id, "sender_id": sender_id, "content": content})
         db.session.commit()
-        sent_at = result.fetchone()[0]
-        return sent_at
+        sent_at = result.fetchone()
+        return sent_at[0]
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error inserting chat into database: {e}")
