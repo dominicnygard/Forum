@@ -27,11 +27,11 @@ def send_chat(room_id, content):
     try:
         sender_id = user_id()
         sql = text("""INSERT INTO messages (chat_id, sender_id, content, sent_at) 
-                   VALUES (:chat_id, :sender_id, :content, NOW()) RETURNING sent_at""")
+                   VALUES (:chat_id, :sender_id, :content, NOW()) RETURNING sent_at, chat_id""")
         result = db.session.execute(sql, {"chat_id":room_id, "sender_id": sender_id, "content": content})
         db.session.commit()
-        sent_at = result.fetchone()
-        return sent_at[0]
+        message_data = result.fetchone()
+        return message_data
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error inserting chat into database: {e}")

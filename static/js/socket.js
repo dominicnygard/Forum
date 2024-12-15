@@ -18,16 +18,34 @@ function addChatToList(roomId, username, last_active, last_message) {
         openChat(roomId);
     }
     
-    chatElement.innerHTML = `
-        <p class="chat-username">${username}</p>
-        <p class="chat-last-message">${last_message || 'No messages yet'}</p>
-        <p class="chat-timestamp">${last_active ? new Date(last_active).toLocaleString() : ''}</p>
-    `;
+    const usernameElem = document.createElement('p');
+    usernameElem.className = 'chat-username';
+    usernameElem.textContent = username;
+
+    const lastMessageElem = document.createElement('p');
+    lastMessageElem.className = 'chat-last-message';
+    lastMessageElem.textContent = last_message || 'No messages yet';
+
+    const timestamp = new Date(last_active);
+    const timestampElem = document.createElement('p');
+    timestampElem.className = 'chat-timestamp';
+    if (isToday(timestamp)) {
+        timestampElem.textContent = timestamp.toLocaleTimeString();
+    } else {
+        timestampElem.textContent = timestamp.toLocaleString();
+    }
+
+    chatElement.appendChild(usernameElem);
+    chatElement.appendChild(lastMessageElem);
+    chatElement.appendChild(timestampElem);
     
     chatList.appendChild(chatElement);
 }
 
 function fetchChats() {
+    const chatList = document.getElementById('chat-list');
+    chatList.innerHTML = '';
+
     fetch('/get-chats', {
         method: 'GET',
         credentials: 'include',
@@ -38,33 +56,22 @@ function fetchChats() {
     .then(response => {
         if (!response.ok) {
             if (response.status === 401) {
-                return fetch('/refresh', {
-                    method: 'GET',
-                    credentials: 'include'
-                }).then(refreshResponse => {
-                    if (refreshResponse.ok) {
-                        return fetch('/get-chats', {
-                            method: 'GET',
-                            credentials: 'include',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                    } else {
-                        //window.location.href = '/login';
-                        throw new Error('Token refresh failed');
-                    }
-            });
+                window.socket.emit('redirect', { url: '/login' });
+            }
         }
-    }
-    return response.json();
+        return response.json();
     })
     .then(data => {
-        if (data) {
+        if (data && Object.keys(data).length > 0) {
             for (const key in data) {
                 const array = data[key]
                 addChatToList(array[0], array[1][1], array[1][2], array[1][3]);
             }
+        } else {
+            const noChatsMessage = document.createElement('p');
+            noChatsMessage.textContent = 'You haven\'t started any chats yet, start a new chat by clicking a user\'s name';
+            noChatsMessage.className = 'no-chats-message';
+            chatList.appendChild(noChatsMessage);
         }
     })
     .catch(error => {
@@ -96,6 +103,25 @@ function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function updateCharCounter(textarea, charCounter, maxChars) {
+    const currentLength = textarea.value.length;
+    charCounter.textContent = `${textarea.value.length}/${maxChars}`;
+    if (currentLength > maxChars) {
+        charCounter.classList.add('exceeded');
+        textarea.classList.add('input-error');
+    } else {
+        charCounter.classList.remove('exceeded');
+        textarea.classList.remove('input-error');
+    }
+}
+
+function isToday(date) {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
 }
 
 document.addEventListener("DOMContentLoaded", function() {

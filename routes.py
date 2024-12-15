@@ -1,5 +1,5 @@
 import re
-from app import app, socketio
+from app import app, socketio, jwt
 from flask import render_template, request, redirect, jsonify, url_for
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
 from jwt.exceptions import ExpiredSignatureError
@@ -99,16 +99,34 @@ def new_post():
     if request.method == "POST":
         if not has_room_permissions(permission_name='post', token=get_jwt()):
             return render_template("error.html", message="You are not permitted to post"), 403
+        
         title = request.form["title"]
         content = request.form["content"]
-        posts.send(title, content)
-        return redirect(url_for("index"))
+        max_title_length = 100
+        max_content_length = 5000
+
+        errors = {}
+
+        if not (1 <= len(title) <= max_title_length):
+            errors["title"] = f"Title must be between 1-{max_title_length} characters long"
+
+        if not (1 <= len(content) <= max_content_length):
+            errors["content"] = f"Post must be between 1-{max_content_length} characters long"
+        
+        if errors:
+            return jsonify({"succcess": False, "errors": errors}), 400
+        
+        try:
+            posts.send(title, content)
+            return jsonify({"success": True}), 200
+        except Exception as e:
+            app.logger.error(f"Error sending post: {e}")
+            return jsonify({"success": False, "errors": {"general": "An unexpected error occurred. Please try again."}}), 500
 
 @app.route("/post/<int:post_id>", methods=["GET", "POST", "DELETE"])
 def post(post_id):
     try:
         if request.method == "GET":
-            verify_jwt_in_request(optional=True)
             post = posts.get_post(post_id)
             return render_template("post.html", post_id=post_id, post=post)
     except Exception as e:
@@ -120,11 +138,14 @@ def post(post_id):
             verify_jwt_in_request()
             content = request.form["content"]
             if has_room_permissions(permission_name='comment', token=get_jwt()):
+                if len(content) <= 1 or len(content) >= 2000:
+                    return jsonify({"success": False, "error": "Comment must be between 1 and 2000 characters long"}), 400
                 posts.comment(content, post_id)
-                return redirect(url_for('post', post_id=post_id))
+                return jsonify({"success": True}), 200
         except Exception as e:
             app.logger.error(f"Error posting comment to post {post_id}: {e}")
             return render_template("error.html", message="An error occurred while posting the comment"), 500
+        
     if request.method == "DELETE":
         try:
             verify_jwt_in_request()
@@ -214,8 +235,10 @@ def api_load_posts():
                 "id": post.id,
                 "title": post.title,
                 "content": post.content,
+                "user_id": post.user_id,
                 "username": post.username,
-                "sent_at": post.sent_at.isoformat()
+                "sent_at": post.sent_at.isoformat(),
+                "comment_count": post.comment_count
             })
 
         return jsonify(posts_list), 200
@@ -233,6 +256,7 @@ def api_load_comments(post_id):
         comments_list = []
         for comment in comments_data:
             comments_list.append({
+                'user_id':  comment.user_id,
                 'username': comment.username,
                 'sent_at':  comment.sent_at.isoformat(),
                 'content':  comment.content,
@@ -321,3 +345,14 @@ def inject_user():
         app.logger.error(f"Error in context processor: {e}")
     return {'current_user': user}
 
+@jwt.unauthorized_loader
+def unauthorized_callback(callback):
+    return render_template("error.html", message="You are not logged in"), 401
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return render_template("error.html", message="Your token has expired"), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(callback):
+    return render_template("error.html", message="Your token is invalid"), 401

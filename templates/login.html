@@ -8,39 +8,60 @@
     {% block title %}Etusivu{% endblock %}
     <body>
         {% block content %}
-        <form id="login-form" action="/login" method="POST">
-            {% if error %}
-                <p style="color: red;">{{ error }}</p>
-            {% endif %}
-            Tunnus: <input type="text" id="username" name="username">
-            <p>
-            Salasana: <input type="password" id="password" name="password">
-            <p>
-            <input type="submit" value="Kirjaudu">
-        </form>
-        If you do not have an account you can register here <a href="/register">tästä</a>
+        <div class="auth-container">
+            <form id="login-form" action="/login" method="POST" class="auth-form">
+                <h2>Login</h2>
+                {% if error %}
+                    <p class="error-message">{{ error }}</p>
+                {% endif %}
+                <div class="auth-form-group">
+                    <div id="username-error" class="error-message"></div>
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="auth-form-group">
+                    <div id="password-error" class="error-message"></div>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+                <p class="redirect">Don't have an account? <a href="/register">Register here</a></p>
+            </form>
+        </div>
         {% endblock %}
 
         {% block scripts %}
         <script>
             document.addEventListener("DOMContentLoaded", function() {
                 const loginForm = document.getElementById('login-form');
+                const usernameError = document.getElementById('username-error');
+                const passwordError = document.getElementById('password-error');
+                const usernameInput = document.getElementById('username');
+                const passwordInput = document.getElementById('password');
     
                 loginForm.addEventListener('submit', function(event) {
                     const username = document.getElementById('username').value.trim();
                     const password = document.getElementById('password').value;
 
-                    if (username.length < 4 || username.length > 20) {
-                        alert('Please enter a username between 4-20 characters.');
+                    usernameError.textContent = '';
+                    passwordError.textContent = '';
+
+                    usernameInput.classList.remove('input-error');
+                    passwordInput.classList.remove('input-error');
+
+                    /*if (username.length < 4 || username.length > 20) {
+                        usernameError.textContent = 'Please enter a username between 4-20 characters.';
+                        usernameInput.classList.add('input-error');
                         event.preventDefault();
                         return;
                     }
 
                     if (password.length < 8 || password.length > 20) {
-                        alert('Please enter a password between 8-20 characters.');
+                        passwordError.textContent = 'Please enter a password between 8-20 characters.';
+                        passwordInput.classList.add('input-error');
                         event.preventDefault();
                         return;
-                    }
+                    }*/
 
                 });
             })

@@ -7,11 +7,29 @@ def get_posts(offset=0, limit=10, search = ''):
     try:
         search = "%" + search + "%"
         sql = text("""
-                SELECT P.title, P.content, U.username, P.sent_at, P.id 
-                FROM Posts P, Users U 
-                WHERE P.user_id=U.id AND P.title ILIKE :search
-                ORDER BY P.sent_at DESC
-                LIMIT :limit OFFSET :offset
+                    SELECT 
+                        P.title, 
+                        P.content, 
+                        U.username, 
+                        P.sent_at, 
+                        P.id, 
+                        U.id AS user_id,
+                        COALESCE(comment_count.total_comments, 0) AS comment_count
+                    FROM 
+                        Posts P
+                    JOIN 
+                        Users U ON P.user_id = U.id
+                    LEFT JOIN 
+                        (SELECT post_id, COUNT(*) AS total_comments 
+                        FROM Comments 
+                        GROUP BY post_id) comment_count 
+                    ON 
+                        P.id = comment_count.post_id
+                    WHERE 
+                        P.title ILIKE :search
+                    ORDER BY 
+                        P.sent_at DESC
+                    LIMIT :limit OFFSET :offset
                 """)
         return db.session.execute(sql, {"search": search, "limit": limit, "offset": offset}).fetchall()
     except Exception as e:
@@ -36,7 +54,7 @@ def send(title, content):
 def get_post(post_id):
     try:
         sql = text("""
-                   SELECT P.title, P.content, U.username, P.sent_at 
+                   SELECT P.title, P.content, U.username, P.sent_at, P.user_id
                    FROM Posts P, Users U 
                    WHERE P.id = :id AND P.user_id=U.id
                    """)
@@ -62,7 +80,7 @@ def comment(content, id):
 def get_comments(post_id, offset=0, limit=15):
     try:
         sql = text("""
-                   SELECT U.username, C.sent_at, C.content, C.id 
+                   SELECT U.id AS user_id, U.username, C.sent_at, C.content, C.id 
                    FROM Comments C, Users U 
                    WHERE C.post_id = :id AND C.user_id=U.id 
                    ORDER BY C.sent_at DESC

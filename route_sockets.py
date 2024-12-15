@@ -8,10 +8,9 @@ import users, chats, rooms
 @socketio.on('connect')
 def handle_connect():
     try:
-        verify_jwt_in_request()
+        verify_jwt_in_request(optional=True)
         token = get_jwt()
         if not token:
-            emit('error', {'message': 'Authentication required'}, to=request.sid)
             return disconnect()
         user_permissions = token.get('user_permissions')
         rooms = user_permissions.keys()
@@ -46,20 +45,28 @@ def handle_send_message(data):
         room_id = data['room_id']
         message = data['message']
 
-        sent_at = chats.send_chat(room_id, message)
-        other_user_id = rooms.get_other_user(users.user_id(), room_id)
+        if has_room_permissions(room_id, 'send', get_jwt()):
+            if len(message) <= 1 or len(message) > 3000:
+                emit('error', {'msg': 'Message must be between 1 and 3000 characters'}, to=request.sid)
+            message_data = chats.send_chat(room_id, message)
+            other_user_id = rooms.get_other_user(users.user_id(), room_id)
 
-        rooms.update_room(users.user_id(), other_user_id, room_id, sent_at.isoformat(), message)
+            rooms.update_room(users.user_id(), other_user_id, room_id, message_data[0].isoformat(), message)
 
-        token = get_jwt()
-        username = token.get('username')
-        emit('receive-message', {
-            'username': username,
-            'message': message,
-            'sent_at': sent_at.isoformat()
-        }, room=room_id)
+            token = get_jwt()
+            username = token.get('username')
+            emit('receive-message', {
+                'message_id': message_data[1],
+                'username': username,
+                'content': message,
+                'sent_at': message_data[0].isoformat()
+            }, room=room_id)
 
-        emit('update-rooms', room=room_id)
+            emit('update-rooms', room=room_id)
+        else:
+            emit('error', {'msg': 'You do not have permission to send messages'}, to=request.sid)
+            
+
     except Exception as e:
         app.logger.error(f"Error sending message: {e}")
         emit('error', {'msg': 'An error occurred while sending the message'}, to=request.sid)

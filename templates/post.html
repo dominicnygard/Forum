@@ -9,13 +9,31 @@
         {% block content %}
         <div class="post">
             <h1>{{ post.title }}</h1>
-            <p>{{ post.content }}</p>
-            <p>Posted by {{ post.username }} on {{ post.sent_at }}</p>
+            <p class="open-post-content">{{ post.content | e }}</p>
+            <div class="post-footer">
+                <p>Posted by
+                    <a href="/start-chat/{{post.user_id}}" title="Click to send a private message">{{post.username}}</a>
+                </p>
+                <p>{{post.sent_at.strftime('%d/%m/%Y, %H:%M:%S')}}</p>
+            </div>
         </div>
-        
         <hr>
-
         <h3>Comments</h3>
+        {% if current_user %}
+        <form id="comment-form" action="/post/{{ post_id }}" method="POST">
+            <div class="form-group">
+                <textarea name = "content" id="comment-content" placeholder="Add comment..." required></textarea>
+                <div id="content-error" class="error-message"></div>
+                <div class="button-group">
+                    <button type="submit" class="send-button">Add comment</button>
+                    <button type="button" class="cancel-button">Cancel</button>
+                    <div id="char-counter">0/2000</div>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <p>Please <a href="/login">login</a> to post a comment.</p>
+        {% endif %}
         <div id="comment-container">
             
         </div>
@@ -23,14 +41,6 @@
             Loading more comments...
         </div>
         
-        {% if current_user %}
-        <form id="comment-form" action="/post/{{ post_id }}" method="POST">
-            <textarea name = "content" id="comment-content"></textarea>
-            <button type="submit">Send</button>
-        </form>
-        {% else %}
-        <p>Please <a href="/login">login</a> to post a comment.</p>
-        {% endif %}
         {% endblock %}
         {% block scripts %}
         <script type="text/javascript" charset="utf-8">
@@ -42,7 +52,102 @@
                 const commentLimit = 15;
                 let loading = false;
                 let allLoaded = false;
-                
+
+                const commentForm = document.getElementById('comment-form');
+                const commentTextarea = document.getElementById('comment-content');
+                if (currentUsername != 'null') {
+                    const sendButton = document.querySelector('.send-button');
+                    const cancelButton = document.querySelector('.cancel-button');
+                    const charCounter = document.getElementById('char-counter');
+                    const contentError = document.getElementById('content-error');
+                    const maxChars = 2000;
+    
+                    sendButton.classList.remove('show');
+                    cancelButton.classList.remove('show');
+
+                    updateCharCounter(commentTextarea, charCounter, maxChars);
+                    adjustTextareaHeight(commentTextarea);
+
+                    function adjustTextareaHeight(element) {
+                        element.style.height = 'auto';
+                        element.style.height = element.scrollHeight + 'px';
+                    }
+    
+                    commentTextarea.addEventListener('input', function() {
+                        adjustTextareaHeight(commentTextarea);
+                        updateCharCounter(commentTextarea, charCounter, maxChars);
+                    });
+    
+                    commentTextarea.addEventListener('focus', () => {
+                        sendButton.classList.add('show');
+                        cancelButton.classList.add('show');
+                    });
+    
+                    commentTextarea.addEventListener('blur', () => {
+                        if (commentTextarea.value.trim() === '') {
+                            sendButton.classList.remove('show');
+                            cancelButton.classList.remove('show');
+                        }
+                    });
+                    
+                    cancelButton.addEventListener('click', () => {
+                        commentTextarea.value = '';
+                        sendButton.classList.remove('show');
+                        cancelButton.classList.remove('show');
+                        commentTextarea.blur();
+                    });
+
+                    const form = document.getElementById('comment-form');
+    
+                    form.addEventListener('submit', function(event) {
+                        event.preventDefault(); 
+    
+                        const content = document.getElementById('comment-content').value;
+                        
+                        document.getElementById('content-error').textContent = '';
+                        commentTextarea.classList.remove('input-error');
+    
+                        if (content.length < 1 || content.length > 2000) {
+                            document.getElementById('content-error').textContent = 'Comment must be between 1-2000 characters.';
+                            commentTextarea.classList.add('input-error');
+                            event.preventDefault();
+                            return;
+                        }
+    
+                        const formData = new FormData(form);
+    
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRF-TOKEN': getCookie('csrf_access_token')
+                            },
+                            body: new URLSearchParams(formData)
+                        })
+                        .then(async response => {
+                            if (response.ok) {
+                                window.location.reload();
+                                commentTextarea.value = '';
+                                sendButton.classList.remove('show');
+                                cancelButton.classList.remove('show');
+                            } else if (response.status === 400) {
+                                const data = await response.json();
+                                if (data.error) {
+                                    contentError.textContent = data.error;
+                                    commentTextarea.classList.add('input-error');
+                                }
+                            } else {
+                                console.error('Error submitting comment:', response);
+                                alert('An unexpected error occurred. Please try again.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error submitting comment:', error);
+                            alert('An unexpected error occurred.');
+                        });
+                    });
+                }
+
                 function loadComments() {
                     if (loading || allLoaded) return;
                     loading = true;
@@ -66,82 +171,83 @@
                             loading = false;
                             document.getElementById("loading-message").style.display = "none";
                         });
-                    }
+                }
+                
+                function appendComments(comments) {
+                    const container = document.getElementById("comment-container");
+                    comments.forEach(comment => {
+                        const commentElement = document.createElement("div");
+                        commentElement.className = "comment";
+                        
+                        const commentHeader = document.createElement("div");
+                        commentHeader.className = "comment-header";
 
-                    function appendComments(comments) {
-                        const container = document.getElementById("comment-container");
-                        comments.forEach(comment => {
-                            const commentElement = document.createElement("div");
-                            commentElement.className = "comment";
+                        const authorLink = document.createElement("a");
+                        authorLink.href = `/start-chat/${comment.user_id}`;
+                        authorLink.className = "comment-author";
+                        authorLink.textContent = comment.username;
+                        
+                        const commentTime = document.createElement("span");
+                        commentTime.className = "comment-time";
+                        commentTime.textContent = new Date(comment.sent_at).toLocaleString();
+
+                        commentHeader.appendChild(authorLink);
+                        commentHeader.appendChild(commentTime);
+
+                        const commentContent = document.createElement("div");
+                        commentContent.className = "comment-content";
+                        commentContent.textContent = comment.content;
+
+                        const commentFooter = document.createElement("div");
+                        commentFooter.className = "comment-footer";
+
+                        if (currentUsername === comment.username) {
+                            const deleteButton = document.createElement("button");
+                            deleteButton.className = "delete-comment";
+                            deleteButton.title = "delete comment";
+
+                            const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            deleteIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                            deleteIcon.setAttribute('fill', 'none');
+                            deleteIcon.setAttribute('viewBox', '0 0 24 24');
+                            deleteIcon.setAttribute('stroke-width', '1.5');
+                            deleteIcon.setAttribute('stroke', 'currentColor');
+                            deleteIcon.classList.add('icon');
+
+                            const deletePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            deletePath.setAttribute('stroke-linecap', 'round');
+                            deletePath.setAttribute('stroke-linejoin', 'round');
+                            deletePath.setAttribute('d', 'm14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0');
                             
-                            let deleteButtonHtml = '';
-                            if (currentUsername === comment.username) {
-                                deleteButtonHtml = '<button class="delete-comment">Delete</button>';
-                            }
+                            deleteIcon.appendChild(deletePath);
+                            deleteButton.appendChild(deleteIcon);
+                            commentFooter.appendChild(deleteButton);
 
-                            commentElement.innerHTML = `
-                                <p><strong>${comment.username}</strong> on ${new Date(comment.sent_at).toLocaleString()}</p>
-                                <p>${comment.content}</p>
-                                ${deleteButtonHtml}
-                                <hr>
-                                `;
-                            
-                            container.appendChild(commentElement);
+                            deleteButton.addEventListener('click', function(event) {
+                                event.stopPropagation();
+                                deleteContent(`/post/${post_id}?comment_id=${comment.id}`);
+                            });
+                        }
 
-                            const deleteButton = commentElement.querySelector('.delete-comment');
-                            if (deleteButton) {
-                                deleteButton.addEventListener('click', function() {
-                                    deleteContent(`/post/${post_id}?comment_id=${comment.id}`);
-                                });
-                            }
-                        });
+                        commentElement.appendChild(commentHeader);
+                        commentElement.appendChild(commentContent);
+                        commentElement.appendChild(commentFooter);
+
+                        container.appendChild(commentElement);
+                    });
+                }
+                
+                loadComments();
+                
+                const container = document.getElementById("content");
+                container.addEventListener("scroll", function() {
+                    if (container.scrollTop + container.clientHeight >= container.scrollHeight && !loading && !allLoaded) {
+                        loadComments();
                     }
-                    
-                    loadComments();
-                    
-                    window.addEventListener("scroll", function() {
-                        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-                            loadComments();
-                        }
-                    });
-                    
-                    const form = document.getElementById('comment-form');
-    
-                    form.addEventListener('submit', function(event) {
-                        event.preventDefault(); 
-    
-                        const content = document.getElementById('comment-content').value;
-    
-                        if (content.length < 1 || content.length > 300) {
-                            alert('Please enter a comment between 1-200 characters.');
-                            event.preventDefault();
-                            return;
-                        }
-    
-                        const formData = new FormData(form);
-    
-                        fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-CSRF-TOKEN': getCookie('csrf_access_token')
-                            },
-                            body: new URLSearchParams(formData)
-                        })
-                        .then(response => {
-                            if (response.ok) {
-                                location.reload();
-                            } else {
-                                console.error('Error submitting comment:', response.statusText);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error submitting comment:', error);
-                        });
-                    });
                 });
+                
+            });
         </script>
         {% endblock %}
-
     </body>
 </html>

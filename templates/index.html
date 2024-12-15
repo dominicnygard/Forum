@@ -8,10 +8,10 @@
 {% block title %}Etusivu{% endblock %}
 <body>
     {% block content %}
-    <div id="post-container">
+    <div id="post-container" class="post-container">
 
     </div>
-    <div id="loading-message" style="text-align: center; display: none;">
+    <div id="loading-message" class="loading-message" style="text-align: center; display: none;">
         Loading more posts...
     </div>
     {% endblock %}
@@ -55,41 +55,131 @@
             function appendPosts(posts) {
                 const container = document.getElementById("post-container");
                 posts.forEach(post => {
-                    const postElement = document.createElement("div");
-                    postElement.className = "post";
+                    const postElement = document.createElement('div');
+                    postElement.className = 'post';
 
-                    let deleteButtonHtml = '';
+                    postElement.addEventListener('click', function() {
+                        window.location.href = `/post/${post.id}`;
+                    });
+
+                    const postTitleDiv = document.createElement('div');
+                    postTitleDiv.className = 'post-title';
+
+                    const postLink = document.createElement('a');
+                    postLink.href = `/post/${post.id}`;
+                    postLink.textContent = post.title;
+
+                    postTitleDiv.appendChild(postLink);
+
+                    const postContentDiv = document.createElement('div');
+                    postContentDiv.className = 'post-content';
+
+                    const postParagraph = document.createElement('p');
+                    postParagraph.textContent = post.content;
+
+                    postContentDiv.appendChild(postParagraph);
+
+                    const postActionsDiv = document.createElement('div');
+                    postActionsDiv.className = 'post-actions';
+
+                    const commentLink = document.createElement('a');
+                    commentLink.href = `/post/${post.id}`;
+                    commentLink.className = 'comment-icon';
+                    commentLink.title = 'Comment';
+                    commentLink.textContent = post.comment_count;
+                    
+                    const commentIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    commentIcon.setAttribute('viewBox', '0 0 24 24');
+                    commentIcon.setAttribute('fill', 'currentColor');
+                    commentIcon.classList.add('icon');
+                    
+                    const commentPath1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    commentPath1.setAttribute('d', 'M4.913 2.658c2.075-.27 4.19-.408 6.337-.408 2.147 0 4.262.139 6.337.408 1.922.25 3.291 1.861 3.405 3.727a4.403 4.403 0 0 0-1.032-.211 50.89 50.89 0 0 0-8.42 0c-2.358.196-4.04 2.19-4.04 4.434v4.286a4.47 4.47 0 0 0 2.433 3.984L7.28 21.53A.75.75 0 0 1 6 21v-4.03a48.527 48.527 0 0 1-1.087-.128C2.905 16.58 1.5 14.833 1.5 12.862V6.638c0-1.97 1.405-3.718 3.413-3.979Z');
+                    commentIcon.appendChild(commentPath1);
+                    
+                    const commentPath2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    commentPath2.setAttribute('d', 'M15.75 7.5c-1.376 0-2.739.057-4.086.169C10.124 7.797 9 9.103 9 10.609v4.285c0 1.507 1.128 2.814 2.67 2.94 1.243.102 2.5.157 3.768.165l2.782 2.781a.75.75 0 0 0 1.28-.53v-2.39l.33-.026c1.542-.125 2.67-1.433 2.67-2.94v-4.286c0-1.505-1.125-2.811-2.664-2.94A49.392 49.392 0 0 0 15.75 7.5Z');
+                    commentIcon.appendChild(commentPath2);
+                    
+                    commentLink.appendChild(commentIcon);
+                    postActionsDiv.appendChild(commentLink);
+
                     if (currentUsername === post.username) {
-                        deleteButtonHtml = `<button class="delete-post" data-post-id="${post.id}">Delete</button>`;
-                    }
+                        const deleteButton = document.createElement('button');
+                        deleteButton.className = 'delete-post';
+                        deleteButton.title = 'Delete post';
+                        
+                        const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        deleteIcon.setAttribute('fill', 'none');
+                        deleteIcon.setAttribute('viewBox', '0 0 24 24');
+                        deleteIcon.setAttribute('stroke-width', '1.5');
+                        deleteIcon.setAttribute('stroke', 'currentColor');
+                        deleteIcon.classList.add('icon');
+                        
+                        const deletePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        deletePath.setAttribute('stroke-linecap', 'round');
+                        deletePath.setAttribute('stroke-linejoin', 'round');
+                        deletePath.setAttribute('d', 'm14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0');
+                        
+                        deleteIcon.appendChild(deletePath);
+                        deleteButton.appendChild(deleteIcon);
+                        postActionsDiv.appendChild(deleteButton);
 
-                    postElement.innerHTML = `
-                        <div class="post-info">
-                            <p>Posted by ${post.username} on ${new Date(post.sent_at).toLocaleString()}</p>
-                        </div>
-                        <div class="post-content">
-                            <h2>${post.title}</h2>
-                            <p>${post.content}</p>
-                            <a href="/post/${post.id}">Read more</a>
-                            ${deleteButtonHtml}
-                        </div>
-                        <hr>
-                    `;
-                    container.appendChild(postElement);
-
-                    const deleteButton = postElement.querySelector('.delete-post');
-                    if (deleteButton) {
-                        deleteButton.addEventListener('click', function() {
+                        deleteButton.addEventListener('click', function (event) {
+                            event.stopPropagation();
                             deleteContent(`/delete-post/${post.id}`);
                         });
                     }
+
+                    const postFooterDiv = document.createElement('div');
+                    postFooterDiv.className = 'post-footer';
+
+                    const postedByParagraph = document.createElement('p');
+                    postedByParagraph.textContent = 'Posted by ';
+
+                    const userLink = document.createElement('a');
+                    userLink.href = `/start-chat/${post.user_id}`;
+                    userLink.title = 'Click to send a private message';
+                    userLink.textContent = post.username;
+
+                    postedByParagraph.appendChild(userLink);
+
+                    const dateParagraph = document.createElement('p');
+                    dateParagraph.textContent = new Date(post.sent_at).toLocaleString();
+
+                    postFooterDiv.appendChild(postedByParagraph);
+                    postFooterDiv.appendChild(dateParagraph);
+
+                    postElement.appendChild(postTitleDiv);
+                    postElement.appendChild(postContentDiv);
+                    postElement.appendChild(postActionsDiv);
+                    postElement.appendChild(postFooterDiv);
+                    
+
+                    container.appendChild(postElement);
+
+                    const innerLinks = postElement.querySelectorAll('a');
+                    innerLinks.forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                    });
+
+                    const innerButton = postElement.querySelectorAll('button');
+                    innerButton.forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                    });
                 });
             }
 
             loadPosts();
             
-            window.addEventListener("scroll", function() {
-                if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+            const container = document.getElementById("content");
+            container.addEventListener("scroll", function() {
+                console.log(container.scrollTop + container.clientHeight, container.scrollHeight);
+                if ( container.scrollTop + container.clientHeight >= container.scrollHeight && !loading && !allLoaded) {
                     loadPosts();
                 }
             });

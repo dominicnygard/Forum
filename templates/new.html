@@ -1,49 +1,106 @@
 <!DOCTYPE html>
 <html>
     {% extends "layout.html" %}
-    {% block content %}
     <head>
         {% block title %}new{% endblock %}
     </head>
     <body>
-        <div>
+        {% block content %}
+        <div class="new-post-container">
             <h2>Create New Post</h2>
             <form id="post-form" action="/new" method="POST">
-                <div>
-                    <label for="title">Title:</label>
+                {% if error %}
+                    <p style="color: red;">{{ error }}</p>
+                {% endif %}
+                <div class="form-group">
+                    <label for="post-title">Title:</label>
                     <input type="text" id="post-title" name="title" required>
+                    <div id="title-counter">0/100</div>
+                    <div id="title-error" class="error-message"></div>
                 </div>
-                <div>
-                    <label for="content">Content:</label>
-                    <textarea id="post-content" name="content" required></textarea>
+                <div class="form-group">
+                    <label for="post-content">Content:</label>
+                    <textarea id="post-content" class="new-post-content" name="content" required></textarea>
+                    <div id="char-counter">0/5000</div>
+                    <div id="content-error" class="error-message">
                 </div>
-                <button type="submit">Send</button>
+                <button type="submit" class="submit-button">Send</button>
             </form>
         </div>
+        {% endblock %}
+
+        {% block scripts %}
         <script type="text/javascript" charset="utf-8">
             document.addEventListener("DOMContentLoaded", function() {
                 const form = document.getElementById('post-form');
+                const textarea = document.getElementById('post-content');
+                const charCounter = document.getElementById('char-counter');
+                const titleCounter = document.getElementById('title-counter');
+                const maxTitleChars = 100;
+                const maxChars = 5000;
+
+                const titleInput = document.getElementById('post-title');
+                const titleError = document.getElementById('title-error');
+                const contentError = document.getElementById('content-error');
+
+                function adjustTextareaHeight(element) {
+                    element.style.height = 'auto';
+                    const newHeight = element.scrollHeight;
+                    const maxHeight = 500;
+
+                    if (newHeight < maxHeight) {
+                        element.style.height = `${newHeight}px`;
+                        element.style.overflowY = 'hidden';
+                    } else {
+                        element.style.height = `${maxHeight}px`;
+                        element.style.overflowY = 'auto';
+                    }
+                }
+
+                adjustTextareaHeight(textarea);
+                updateCharCounter(textarea, charCounter, maxChars);
+                updateCharCounter(titleInput, titleCounter, maxTitleChars);
+
+                textarea.addEventListener('input', function() {
+                    adjustTextareaHeight(textarea);
+                    updateCharCounter(textarea, charCounter, maxChars);
+                });
+
+                titleInput.addEventListener('input', function() {
+                    updateCharCounter(titleInput, titleCounter, maxTitleChars);
+                });
                 
                 form.addEventListener('submit', function(event) {
                     event.preventDefault(); 
 
                     const title = document.getElementById('post-title').value;
                     const content = document.getElementById('post-content').value;
+                    let isValid = true;
 
-                    if (title.length < 1 || title.length > 200) {
-                        alert('Please enter a title between 1-200 characters.');
-                        event.preventDefault();
-                        return;
+                    document.getElementById('title-error').textContent = '';
+                    document.getElementById('content-error').textContent = '';
+
+                    textarea.classList.remove('input-error');
+                    titleInput.classList.remove('input-error');
+
+                    if (title.length < 1 || title.length > titleMaxChars) {
+                        document.getElementById('title-error').textContent = `Please enter a title between 1-${titleMaxChars} characters.`;
+                        titleInput.classList.add('input-error');
+                        isValid = false;
                     }
 
-                    if (content.length < 1 || content.length > 2000) {
-                        alert('Please enter content between 1-1000 characters.');
+                    if (content.length < 1 || content.length > maxChars) {
+                        document.getElementById('content-error').textContent = `Your post may only be 1-${maxChars} characters.`;
+                        textarea.classList.add('input-error');
+                        isValid = false;
+                    }
+
+                    if (!isValid) {
                         event.preventDefault();
                         return;
                     }
 
                     const formData = new FormData(form);
-
                     
                     fetch(form.action, {
                         method: 'POST',
@@ -53,19 +110,36 @@
                         },
                         body: new URLSearchParams(formData)
                     })
-                    .then(response => {
+                    .then(async response => {
                         if (response.ok) {
-                            location.href = '/';
+                            window.location.href = '/';
+                        } else if (response.status === 400) {
+                            const data = await response.json();
+                            if (data.errors) {
+                                if (data.errors.title) {
+                                    titleError.textContent = data.errors.title;
+                                    titleInput.classList.add('input-error');
+                                }
+                                if (data.errors.content) {
+                                   contentError.textContent = data.errors.content;
+                                   textarea.classList.add('input-error');
+                                }
+                                if (data.errors.general) {
+                                    alert(data.errors.general);
+                                }
+                            }
                         } else {
                             console.error('Error submitting post:', response.statusText);
+                            alert('An unexpected error occurred. Please try again.')
                         }
                     })
                     .catch(error => {
                         console.error('Error submitting post:', error);
+                        alert('An error occurred while submitting your post.');
                     });
                 });
             });
         </script>
+        {% endblock %}
     </body>
-    {% endblock %}
 </html>
