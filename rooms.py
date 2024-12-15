@@ -111,7 +111,9 @@ def create_new_room(user1_id, user2_id):
             (:room_id, :user1_id, 1),
             (:room_id, :user1_id, 2),
             (:room_id, :user2_id, 1),
-            (:room_id, :user2_id, 2)
+            (:room_id, :user2_id, 2),
+            (:room_id, :user1_id, 5),
+            (:room_id, :user2_id, 5)
         """)
         db.session.execute(sql, {"room_id": room_id, "user1_id": user1_id, "user2_id": user2_id})
         db.session.commit()

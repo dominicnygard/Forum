@@ -66,4 +66,4 @@ CREATE TABLE PublicPermissions
     PRIMARY KEY (user_id, permission_id)
 );
 
-INSERT INTO Permissions (permission_name) VALUES ('view'), ('send'), ('post'), ('comment'), ('delete') ('admin')
+INSERT INTO Permissions (permission_name) VALUES ('view'), ('send'), ('post'), ('comment'), ('delete'), ('admin')

@@ -88,12 +88,12 @@ function deleteContent(url) {
             'X-CSRF-TOKEN': getCookie('csrf_access_token')
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.msg) {
+    .then(async response => {
+        const data = await response.json();
+        if (response.ok) {
             location.reload();
         } else {
-            alert('An error occured while deleting content');
+            alert(data.error);
         }
     })
     .catch(error => console.error('Error:', error));

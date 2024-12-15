@@ -27,7 +27,7 @@ def send_chat(room_id, content):
     try:
         sender_id = user_id()
         sql = text("""INSERT INTO messages (chat_id, sender_id, content, sent_at) 
-                   VALUES (:chat_id, :sender_id, :content, NOW()) RETURNING sent_at, chat_id""")
+                   VALUES (:chat_id, :sender_id, :content, NOW()) RETURNING sent_at, id""")
         result = db.session.execute(sql, {"chat_id":room_id, "sender_id": sender_id, "content": content})
         db.session.commit()
         message_data = result.fetchone()

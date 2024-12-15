@@ -83,8 +83,8 @@
                     textarea.classList.remove('input-error');
                     titleInput.classList.remove('input-error');
 
-                    if (title.length < 1 || title.length > titleMaxChars) {
-                        document.getElementById('title-error').textContent = `Please enter a title between 1-${titleMaxChars} characters.`;
+                    if (title.length < 1 || title.length > maxTitleChars) {
+                        document.getElementById('title-error').textContent = `Please enter a title between 1-${maxTitleChars} characters.`;
                         titleInput.classList.add('input-error');
                         isValid = false;
                     }

@@ -13,9 +13,9 @@ Allt som behövs finns i requirements.txt och sql schema finns i schema.sql
 `(venv) $ pip install -r requirements.txt`  
 `(venv) $ psql < schema.sql`  
 Efter att man gjort det här måste man också skapa en .env fil där man måste skriva tre variabler  
-`SECRET_KEY='secret key'`
-`JWT_SECRET_KEY='jwt secret key'`
-`DATABASE_URI='din databas URI'`
+`SECRET_KEY='secret key'`  
+`JWT_SECRET_KEY='jwt secret key'`  
+`DATABASE_URI='din databas URI'`  
 Efter det så är det bara att köra  
 `(venv) $ flask run`  
 Detta kommer att starta programmet på localhost:5000  

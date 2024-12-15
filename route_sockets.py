@@ -46,8 +46,9 @@ def handle_send_message(data):
         message = data['message']
 
         if has_room_permissions(room_id, 'send', get_jwt()):
-            if len(message) <= 1 or len(message) > 3000:
+            if len(message) < 1 or len(message) >= 3000:
                 emit('error', {'msg': 'Message must be between 1 and 3000 characters'}, to=request.sid)
+                return
             message_data = chats.send_chat(room_id, message)
             other_user_id = rooms.get_other_user(users.user_id(), room_id)
 

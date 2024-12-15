@@ -42,9 +42,9 @@ def login():
             username = request.form["username"]
             password = request.form["password"]
 
-            if len(username) < 4 or len(username) > 20:
+            if len(username) < 4 or len(username) >= 20:
                 return render_template("login.html", error="Invalid username, username must be between 4 and 20 characters long")
-            if len(password) < 8 or len(password) > 20:
+            if len(password) < 8 or len(password) >= 20:
                 return render_template("login.html", error="Invalid password, password must be between 8 and 20 characters long")
             
             response = users.login(username, password)
@@ -138,7 +138,7 @@ def post(post_id):
             verify_jwt_in_request()
             content = request.form["content"]
             if has_room_permissions(permission_name='comment', token=get_jwt()):
-                if len(content) <= 1 or len(content) >= 2000:
+                if len(content) < 1 or len(content) >= 2000:
                     return jsonify({"success": False, "error": "Comment must be between 1 and 2000 characters long"}), 400
                 posts.comment(content, post_id)
                 return jsonify({"success": True}), 200
@@ -152,15 +152,16 @@ def post(post_id):
             comment_id = int(request.args.get("comment_id", 0))
             user_id = get_jwt_identity()
             comment = posts.check_user_comment(user_id, comment_id)
+
             if comment is None:
-                return render_template("error.html", message="You are not permitted to delete this comment"), 403
+                return jsonify({"success": False, "error": "This is not your comment!"}), 403
             if has_room_permissions(permission_name='delete', token=get_jwt()):
                 posts.delete_comment(comment_id, user_id)
-                return jsonify({"message": "Comment deleted"}), 200
-            return render_template("error.html", message="You are not permitted to delete this post"), 403
+                return jsonify({"success": True}), 200
+            return jsonify({"success": False, "error": "You do not have permission to delete this comment"}), 403
         except Exception as e:
             app.logger.error(f"Error deleting comment on post {post_id}: {e}")
-            return render_template("error.html", message="An error occurred while deleting comment"), 500
+            return jsonify({"success": False, "error": "An unknown error occured"}), 500
 
         
 

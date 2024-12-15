@@ -43,7 +43,8 @@ def register(username, password):
         sql = text("""
                     INSERT INTO PublicPermissions (user_id, permission_id) VALUES 
                     (:user_id, 3), 
-                    (:user_id, 4)
+                    (:user_id, 4),
+                    (:user_id, 5)
                     """)
         db.session.execute(sql, {"user_id": user_id})
         db.session.commit()
