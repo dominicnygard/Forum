@@ -20,3 +20,13 @@ Efter det så är det bara att köra
 `(venv) $ flask run`  
 Detta kommer att starta programmet på localhost:5000  
 
+På sidan kan man söka efter inlägg genom att använda sökfältet, man kan skapa nya inlägg genom att klicka på knappen bredvid utloggningen.  
+För att kunna skapa inlägg måste man förstås registrera sig eller logga in, men sidan är helt användbar utan att logga in också.  
+För att öppna privatmeddelanden med någon måste man klicka på deras användarnamn, för att testa privatmeddelanden lönas det att öppna en  
+ny incognito flik där man är inloggad med en annan användare, på så här sätt så ser man att meddelandena uppdateras i realtid utan att  
+sidan laddas om.  
+
+Andra funktionaliteter är att det t.ex. går att radera sina inlägg, kommentarer eller privatmeddelanden. Då man raderar privatmeddelanden så  
+raderas de i realtid för båda användarna. Om det finns för många inlägg, kommentarer eller privatmeddelanden för att visa på en gång så  
+laddas fler in om man använder sin scroll bar.  
+
